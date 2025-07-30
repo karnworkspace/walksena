@@ -1,0 +1,17 @@
+# Dependencies
+/node_modules
+/server/node_modules
+/walk-in-form/node_modules
+
+# Build output
+/dist
+/build
+
+# Environment variables
+.env
+.env.backup
+service-account-key.json
+/server/Key service-gg/
+
+# macOS
+.DS_Store
