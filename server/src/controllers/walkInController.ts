@@ -15,8 +15,13 @@ export const submitWalkInForm = async (req: Request, res: Response) => {
 
     const formData: WalkInFormData = req.body;
 
-    // Validate required fields
-    const validation = validateWalkInForm(formData);
+    // Check if this is a draft submission
+    const isDraft = formData.isDraft === true;
+    console.log('Is draft submission:', isDraft);
+    
+    // For non-draft submissions, validate required fields
+    if (!isDraft) {
+      const validation = validateWalkInForm(formData);
     if (!validation.isValid) {
       console.log('❌ Validation failed:', validation.errors);
       return res.status(400).json({
@@ -24,6 +29,9 @@ export const submitWalkInForm = async (req: Request, res: Response) => {
         error: 'Validation failed',
         details: validation.errors
       });
+      }
+    } else {
+      console.log('💾 Saving draft - skipping validation');
     }
 
     // Check for existing customer if phone number is provided
@@ -41,6 +49,11 @@ export const submitWalkInForm = async (req: Request, res: Response) => {
       ...formData,
       month: formData.visitDate ? new Date(formData.visitDate).toLocaleDateString('en-US', { month: 'long' }) : undefined,
       visitDate: formData.visitDate ? new Date(formData.visitDate).toISOString() : new Date().toISOString(),
+      // Add draft-specific metadata
+      ...(isDraft && {
+        latestStatus: formData.latestStatus || 'Draft - In Progress',
+        grade: formData.grade || 'Draft'
+      })
     };
 
     // Submit to Google Sheets
@@ -49,20 +62,27 @@ export const submitWalkInForm = async (req: Request, res: Response) => {
     if (result.success) {
       console.log('✅ Form submitted successfully');
       
+      const message = isDraft ? 
+        'Draft saved successfully! You can continue later.' : 
+        'Walk-in form submitted successfully';
+      
       res.json({
         success: true,
-        message: 'Walk-in form submitted successfully',
+        message: message,
         data: {
           rowNumber: result.rowNumber,
-          existingCustomer: existingCustomer
+          existingCustomer: existingCustomer,
+          isDraft: isDraft
         }
       });
     } else {
       console.error('❌ Failed to submit form:', result.error);
       
+      const errorMessage = isDraft ? 'Failed to save draft' : 'Failed to submit form';
+      
       res.status(500).json({
         success: false,
-        error: 'Failed to submit form',
+        error: errorMessage,
         details: result.error
       });
     }
@@ -188,6 +208,20 @@ export const getDropdownOptions = async (req: Request, res: Response) => {
       error: 'Failed to fetch dropdown options',
       details: error instanceof Error ? error.message : 'Unknown error'
     });
+  }
+};
+
+/**
+ * Get all walk-in entries
+ */
+export const getWalkInEntries = async (req: Request, res: Response) => {
+  try {
+    console.log('Fetching all walk-in entries');
+    const entries = await googleSheetsService.getAllWalkInData();
+    res.json({ success: true, data: entries });
+  } catch (error) {
+    console.error('Error fetching walk-in entries:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch entries' });
   }
 };
 

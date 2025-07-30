@@ -46,4 +46,9 @@ export interface WalkInFormData {
   reasonNotBookingDetail?: string;      // Column AL
 
   followUps?: { date: string | null; detail: string }[]; // Column AM, AN, AO...
+  
+  // Additional fields for draft functionality
+  isDraft?: boolean;
+  completedSteps?: number;
+  lastUpdated?: string;
 }

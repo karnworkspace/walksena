@@ -89,6 +89,35 @@ export class GoogleSheetsService {
     }
   }
 
+  async getAllWalkInData(): Promise<any[]> {
+    try {
+      console.log('Fetching all data from Google Sheets...');
+      const response = await this.sheets.spreadsheets.values.get({
+        spreadsheetId: GOOGLE_CONFIG.spreadsheetId,
+        range: `${GOOGLE_CONFIG.sheetName}!A:CF`,
+      });
+
+      const rows = response.data.values || [];
+      if (rows.length === 0) {
+        return [];
+      }
+
+      const header = rows[0];
+      const data = rows.slice(1).map(row => {
+        const rowData: any = {};
+        header.forEach((key, index) => {
+          rowData[key] = row[index];
+        });
+        return rowData;
+      });
+
+      return data;
+    } catch (error) {
+      console.error('Failed to fetch all data:', error);
+      throw error;
+    }
+  }
+
   async getUniqueValues(columnIndex: number, maxRows: number = 100): Promise<string[]> {
     try {
       const response = await this.sheets.spreadsheets.values.get({
