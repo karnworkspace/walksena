@@ -6,6 +6,7 @@ import WalkInList from './components/list/WalkInList';
 import { setEditMode, setViewMode } from './store/slices/walkInFormSlice';
 import { convertGoogleSheetsToFormData } from './utils/dataConverter';
 import { AppDispatch } from './store';
+import senaLogo from './assets/sena logo.png';
 import 'antd/dist/reset.css';
 import './App.css';
 
@@ -29,9 +30,12 @@ const App: React.FC = () => {
       <div className="App">
         <div className="main-container">
           <div className="app-header">
-            <Title level={2} className="app-title">
-              {view === 'form' ? 'Walk-in Form 2025' : 'Walk-in Records'}
-            </Title>
+            <div className="header-left">
+              <img src={senaLogo} alt="SENA Logo" className="sena-logo" />
+              <Title level={2} className="app-title">
+                {view === 'form' ? 'Walk-in Form 2025' : 'Walk-in Records'}
+              </Title>
+            </div>
             <Button 
               type="primary" 
               size="large" 
