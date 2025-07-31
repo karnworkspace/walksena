@@ -1,52 +1,43 @@
 import { GoogleAuth } from 'google-auth-library';
 import { google } from 'googleapis';
 import dotenv from 'dotenv';
+import * as path from 'path';
 
-// Load environment variables
 dotenv.config();
 
 console.log('🔧 Loading Google configuration...');
 
-// Validate environment variables
 if (!process.env.SPREADSHEET_ID) {
   throw new Error('SPREADSHEET_ID environment variable is not set');
 }
 
-let serviceAccountKey: any;
 let auth: GoogleAuth;
 
-// Try to load from environment variable first (Replit)
-if (process.env.SERVICE_ACCOUNT_KEY) {
-  console.log('Using credentials from environment variable');
+// Check if we're in a production/Replit environment (has GOOGLE_SERVICE_ACCOUNT)
+if (process.env.GOOGLE_SERVICE_ACCOUNT) {
   try {
-    serviceAccountKey = JSON.parse(process.env.SERVICE_ACCOUNT_KEY);
-    console.log('✅ Service account credentials loaded from environment');
-    console.log('   Project ID:', serviceAccountKey.project_id);
-    console.log('   Client Email:', serviceAccountKey.client_email);
-    
+    console.log('📋 Using GOOGLE_SERVICE_ACCOUNT environment variable');
+    const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
     auth = new GoogleAuth({
-      credentials: serviceAccountKey,
+      credentials,
       scopes: [
         'https://www.googleapis.com/auth/spreadsheets',
         'https://www.googleapis.com/auth/drive'
       ]
     });
+    console.log('✅ Service account credentials loaded from environment variable');
+    console.log('   Project ID:', credentials.project_id);
   } catch (error) {
-    console.error('❌ Failed to parse SERVICE_ACCOUNT_KEY:', error);
+    console.error('❌ Failed to parse GOOGLE_SERVICE_ACCOUNT from environment variable:', error);
     throw error;
   }
 } else {
-  // Fallback to file (local development)
-  console.log('Using credentials from file');
-  import * as path from 'path';
+  // Fallback to reading from a file (for local development)
+  console.log('📁 Using service account key file for local development');
   const serviceAccountKeyPath = path.join(__dirname, '../../service-account-key.json');
-  
   try {
-    serviceAccountKey = require(serviceAccountKeyPath);
-    console.log('✅ Service account credentials loaded from file');
-    console.log('   Project ID:', serviceAccountKey.project_id);
-    console.log('   Client Email:', serviceAccountKey.client_email);
-    
+    // Check if file exists
+    require.resolve(serviceAccountKeyPath);
     auth = new GoogleAuth({
       keyFile: serviceAccountKeyPath,
       scopes: [
@@ -54,8 +45,10 @@ if (process.env.SERVICE_ACCOUNT_KEY) {
         'https://www.googleapis.com/auth/drive'
       ]
     });
+    console.log(`✅ Service account credentials loaded from file: ${serviceAccountKeyPath}`);
   } catch (error) {
-    console.error('❌ Failed to load service account key file:', error);
+    console.error(`❌ Failed to load service account key from file: ${serviceAccountKeyPath}`, error);
+    console.error('   Please make sure service-account-key.json exists in the server/ directory for local development.');
     throw error;
   }
 }
