@@ -103,9 +103,9 @@ export const submitWalkInForm = async (req: Request, res: Response) => {
  */
 export const checkCustomer = async (req: Request, res: Response) => {
   try {
-    const { phoneNumber } = req.params;
+    const { phoneNumber } = req.query;
 
-    if (!phoneNumber) {
+    if (!phoneNumber || typeof phoneNumber !== 'string') {
       return res.status(400).json({
         success: false,
         error: 'Phone number is required'

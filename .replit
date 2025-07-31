@@ -1,0 +1,15 @@
+run = "cd server && npm install && npm run build && npm start"
+entrypoint = "server/src/index.ts"
+
+[nix]
+channel = "stable-22_11"
+
+[deployment]
+run = ["sh", "-c", "cd server && npm install && npm run build && npm start"]
+
+[languages.typescript]
+pattern = "**/*.ts"
+syntax = "typescript"
+
+[languages.typescript.languageServer]
+start = ["typescript-language-server", "--stdio"]

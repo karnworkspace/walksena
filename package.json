@@ -1,0 +1,16 @@
+{
+  "name": "walksena-replit",
+  "version": "1.0.0",
+  "description": "Walk-in Form System for SENA",
+  "main": "server/src/index.ts",
+  "scripts": {
+    "start": "cd server && npm start",
+    "dev": "cd server && npm run dev",
+    "build": "cd server && npm run build && cd ../walk-in-form && npm run build",
+    "install-all": "cd server && npm install && cd ../walk-in-form && npm install"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "author": "SENA Team",
+  "license": "MIT"
+}

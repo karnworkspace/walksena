@@ -6,7 +6,7 @@ const router = Router();
 
 router.post('/submit', submitWalkInForm);
 router.get('/test-connection', testConnection);
-router.get('/check-customer/:phoneNumber', checkCustomer);
+router.get('/check-customer', checkCustomer);
 router.get('/dropdown-options', getDropdownOptions);
 router.get('/entries', getWalkInEntries);
 
