@@ -58,7 +58,7 @@ exports.sheets = googleapis_1.google.sheets({ version: 'v4', auth: exports.auth 
 // Export configuration
 exports.GOOGLE_CONFIG = {
     spreadsheetId: process.env.SPREADSHEET_ID,
-    sheetName: ' Walk-in 2025', // Note: space at the beginning is important
+    sheetName: 'Walk-in', // Updated to match actual sheet name
     auth: // Note: space at the beginning is important
     exports.auth,
     sheets: exports.sheets

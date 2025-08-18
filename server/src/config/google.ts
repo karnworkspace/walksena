@@ -50,7 +50,7 @@ export const sheets = google.sheets({ version: 'v4', auth });
 // Export configuration
 export const GOOGLE_CONFIG = {
   spreadsheetId: process.env.SPREADSHEET_ID,
-  sheetName: ' Walk-in 2025', // Note: space at the beginning is important
+  sheetName: 'Walk-in', // Updated to match actual sheet name
   auth,
   sheets
 };

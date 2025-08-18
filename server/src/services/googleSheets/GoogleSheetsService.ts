@@ -14,8 +14,14 @@ export class GoogleSheetsService {
     try {
       console.log('📝 Appending data to Google Sheets...');
       
+      // Get next running number
+      const runningNumber = await this.getNextRunningNumber();
+      
       // Map form data to sheet columns (A-CF = 84 columns)
       const values = this.mapDataToSheetRow(data);
+      
+      // Set running number in Column A (index 0)
+      values[0] = runningNumber;
       
       const response = await this.sheets.spreadsheets.values.append({
         spreadsheetId: GOOGLE_CONFIG.spreadsheetId,
@@ -28,6 +34,7 @@ export class GoogleSheetsService {
 
       console.log('✅ Data appended successfully');
       console.log('   Range:', response.data.updates?.updatedRange);
+      console.log('   Running Number:', runningNumber);
       
       // Extract row number from range (e.g., "'Walk-in 2025'!A2:CF2" -> 2)
       const rowNumber = response.data.updates?.updatedRange?.match(/(\d+)$/)?.[1];
@@ -59,6 +66,7 @@ export class GoogleSheetsService {
       const rows = response.data.values || [];
       
       // Skip header row, check column M (index 12) for phone numbers
+      // Note: Data is now in columns G-AT, so phone number is still in column M (index 12)
       for (let i = 1; i < rows.length; i++) {
         const row = rows[i];
         const existingPhone = row[12]; // Column M = phone number
@@ -70,10 +78,11 @@ export class GoogleSheetsService {
             exists: true,
             data: {
               rowNumber: i + 1,
-              fullName: row[11], // Column L
-              email: row[13],    // Column N
-              lineId: row[14],   // Column O
-              age: row[15],      // Column P
+              runningNumber: row[0], // Column A = running number
+              fullName: row[11],     // Column L = full name
+              email: row[13],        // Column N = email
+              lineId: row[14],       // Column O = Line ID
+              age: row[15],          // Column P = age
               // Add more fields as needed
             }
           };
@@ -147,23 +156,22 @@ export class GoogleSheetsService {
   private mapDataToSheetRow(data: WalkInFormData): any[] {
     const row = new Array(84).fill(''); // 84 columns (A-CF)
 
-    // Map data to corresponding columns
-    row[0] = data.no || '';                           // Column A
-    row[1] = data.month || '';                        // Column B  
-    row[2] = data.salesQueue || '';                   // Column C
-    row[3] = this.formatDate(data.visitDate) || '';   // Column D
-    row[4] = data.leadFromMonth || '';                // Column E
-    row[5] = data.mediaOnline || '';                  // Column F
-    row[6] = data.mediaOffline || '';                 // Column G
-    row[7] = data.walkInType || '';                   // Column H
-    row[8] = data.passSiteSource || '';               // Column I
-    row[9] = data.latestStatus || '';                 // Column J
-    row[10] = data.grade || '';                       // Column K
-    row[11] = data.fullName || '';                    // Column L
-    row[12] = data.phoneNumber || '';                 // Column M
-    row[13] = data.email || '';                       // Column N
-    row[14] = data.lineId || '';                      // Column O
-    row[15] = data.age || '';                         // Column P
+    // Column A = running number (will be set in appendWalkInData)
+    // Map data starting from Column B according to sheet headers
+    row[1] = data.salesQueue || '';                   // Column B: Sales Queue
+    row[2] = this.formatDate(data.visitDate) || '';   // Column C: DATE (วันที่เข้าโครงการ)
+    row[3] = data.leadFromMonth || '';                // Column D: Lead จากเดือน (Detail)
+    row[4] = data.mediaOnline || '';                  // Column E: สื่อ Online (ขนุมอมุมา)
+    row[5] = data.mediaOffline || '';                 // Column F: สื่อ Offline
+    row[6] = data.walkInType || '';                   // Column G: Walk-in Type
+    row[7] = data.passSiteSource || '';               // Column H: สื่อ pass site อะไรบ้าง
+    row[8] = data.latestStatus || '';                 // Column I: Status สุดท้าย (unqualified/qualified)
+    row[9] = data.grade || '';                        // Column J: (next field)
+    row[10] = data.fullName || '';                    // Column K: (customer info)
+    row[11] = data.phoneNumber || '';                 // Column L: (phone)
+    row[12] = data.email || '';                       // Column M: (email)
+    row[13] = data.lineId || '';                      // Column N: (Line ID)
+    row[14] = data.age || '';                         // Column O: (age)
     row[16] = data.residenceDistrict || '';           // Column Q
     row[17] = data.residenceProvince || '';           // Column R
     row[18] = data.workDistrict || '';                // Column S
@@ -207,6 +215,37 @@ export class GoogleSheetsService {
 
   private normalizePhoneNumber(phone: string): string {
     return phone.replace(/[-\s\(\)]/g, '').replace(/^0/, '66');
+  }
+
+  async getNextRunningNumber(): Promise<number> {
+    try {
+      console.log('🔢 Getting next running number...');
+      
+      const response = await this.sheets.spreadsheets.values.get({
+        spreadsheetId: GOOGLE_CONFIG.spreadsheetId,
+        range: `${GOOGLE_CONFIG.sheetName}!A:A`
+      });
+
+      const rows = response.data.values || [];
+      
+      // Skip header row and find the last numeric value
+      let maxNumber = 0;
+      for (let i = 1; i < rows.length; i++) {
+        const value = rows[i][0];
+        const num = parseInt(value);
+        if (!isNaN(num) && num > maxNumber) {
+          maxNumber = num;
+        }
+      }
+      
+      const nextNumber = maxNumber + 1;
+      console.log('✅ Next running number:', nextNumber);
+      return nextNumber;
+      
+    } catch (error) {
+      console.error('❌ Failed to get running number:', error);
+      return 1; // Default to 1 if error
+    }
   }
 
   async testConnection(): Promise<boolean> {
