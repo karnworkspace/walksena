@@ -1,37 +1,4 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -56,23 +23,31 @@ console.log('🔧 Loading Google configuration...');
 if (!process.env.SPREADSHEET_ID) {
     throw new Error('SPREADSHEET_ID environment variable is not set');
 }
-// Load service account credentials from file
-const path = __importStar(require("path"));
-const serviceAccountKeyPath = path.join(__dirname, '../../service-account-key.json');
+// Load service account credentials from environment variable
 let serviceAccountKey;
 try {
-    serviceAccountKey = require(serviceAccountKeyPath);
-    console.log('✅ Service account credentials loaded from file');
-    console.log('   Project ID:', serviceAccountKey.project_id);
-    console.log('   Client Email:', serviceAccountKey.client_email);
+    if (process.env.GOOGLE_SERVICE_ACCOUNT) {
+        serviceAccountKey = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
+        // Fix private key format for OpenSSL compatibility
+        if (serviceAccountKey.private_key) {
+            // Replace \n with actual newlines
+            serviceAccountKey.private_key = serviceAccountKey.private_key.replace(/\\n/g, '\n');
+        }
+        console.log('✅ Service account credentials loaded from environment');
+        console.log('   Project ID:', serviceAccountKey.project_id);
+        console.log('   Client Email:', serviceAccountKey.client_email);
+    }
+    else {
+        throw new Error('GOOGLE_SERVICE_ACCOUNT environment variable not found');
+    }
 }
 catch (error) {
-    console.error('❌ Failed to load service account key file:', error);
+    console.error('❌ Failed to load service account credentials:', error);
     throw error;
 }
-// Create Google Auth instance with keyFile instead of credentials
+// Create Google Auth instance
 exports.auth = new google_auth_library_1.GoogleAuth({
-    keyFile: serviceAccountKeyPath,
+    credentials: serviceAccountKey,
     scopes: [
         'https://www.googleapis.com/auth/spreadsheets',
         'https://www.googleapis.com/auth/drive'
