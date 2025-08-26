@@ -1,11 +1,15 @@
-run = "cd server && npm install && npm run build && npm start"
+run = "npm run install-all && npm run build && npm start"
 entrypoint = "server/src/index.ts"
 
 [nix]
 channel = "stable-22_11"
 
 [deployment]
-run = ["sh", "-c", "cd server && npm install && npm run build && npm start"]
+run = ["sh", "-c", "npm run install-all && npm run build && npm start"]
+
+[[ports]]
+localPort = 3001
+externalPort = 80
 
 [languages.typescript]
 pattern = "**/*.ts"

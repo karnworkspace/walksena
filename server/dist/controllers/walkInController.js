@@ -94,8 +94,8 @@ exports.submitWalkInForm = submitWalkInForm;
  */
 const checkCustomer = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { phoneNumber } = req.params;
-        if (!phoneNumber) {
+        const { phoneNumber } = req.query;
+        if (!phoneNumber || typeof phoneNumber !== 'string') {
             return res.status(400).json({
                 success: false,
                 error: 'Phone number is required'

@@ -20,8 +20,12 @@ class GoogleSheetsService {
             var _a, _b, _c, _d;
             try {
                 console.log('📝 Appending data to Google Sheets...');
+                // Get next running number
+                const runningNumber = yield this.getNextRunningNumber();
                 // Map form data to sheet columns (A-CF = 84 columns)
                 const values = this.mapDataToSheetRow(data);
+                // Set running number in Column A (index 0)
+                values[0] = runningNumber;
                 const response = yield this.sheets.spreadsheets.values.append({
                     spreadsheetId: google_1.GOOGLE_CONFIG.spreadsheetId,
                     range: `${google_1.GOOGLE_CONFIG.sheetName}!A:CF`,
@@ -32,6 +36,7 @@ class GoogleSheetsService {
                 });
                 console.log('✅ Data appended successfully');
                 console.log('   Range:', (_a = response.data.updates) === null || _a === void 0 ? void 0 : _a.updatedRange);
+                console.log('   Running Number:', runningNumber);
                 // Extract row number from range (e.g., "'Walk-in 2025'!A2:CF2" -> 2)
                 const rowNumber = (_d = (_c = (_b = response.data.updates) === null || _b === void 0 ? void 0 : _b.updatedRange) === null || _c === void 0 ? void 0 : _c.match(/(\d+)$/)) === null || _d === void 0 ? void 0 : _d[1];
                 return {
@@ -58,20 +63,23 @@ class GoogleSheetsService {
                     range: `${google_1.GOOGLE_CONFIG.sheetName}!A:CF`
                 });
                 const rows = response.data.values || [];
-                // Skip header row, check column M (index 12) for phone numbers
+                // Skip header row, check column Q (index 16) for phone numbers
+                // Note: Phone number is now in column Q (index 16)
                 for (let i = 1; i < rows.length; i++) {
                     const row = rows[i];
-                    const existingPhone = row[12]; // Column M = phone number
+                    const existingPhone = row[16]; // Column Q = phone number
                     if (existingPhone && this.normalizePhoneNumber(existingPhone) === this.normalizePhoneNumber(phoneNumber)) {
                         console.log('✅ Found existing customer at row:', i + 1);
                         return {
                             exists: true,
                             data: {
                                 rowNumber: i + 1,
-                                fullName: row[11], // Column L
-                                email: row[13], // Column N
-                                lineId: row[14], // Column O
-                                age: row[15], // Column P
+                                runningNumber: row[0], // Column A = running number
+                                fullName: row[15], // Column P = full name
+                                phoneNumber: row[16], // Column Q = phone number
+                                email: row[17], // Column R = email
+                                lineId: row[18], // Column S = Line ID
+                                age: row[19], // Column T = age
                                 // Add more fields as needed
                             }
                         };
@@ -140,52 +148,52 @@ class GoogleSheetsService {
     }
     mapDataToSheetRow(data) {
         const row = new Array(84).fill(''); // 84 columns (A-CF)
-        // Map data to corresponding columns
-        row[0] = data.no || ''; // Column A
-        row[1] = data.month || ''; // Column B  
-        row[2] = data.salesQueue || ''; // Column C
-        row[3] = this.formatDate(data.visitDate) || ''; // Column D
-        row[4] = data.leadFromMonth || ''; // Column E
-        row[5] = data.mediaOnline || ''; // Column F
-        row[6] = data.mediaOffline || ''; // Column G
-        row[7] = data.walkInType || ''; // Column H
-        row[8] = data.passSiteSource || ''; // Column I
-        row[9] = data.latestStatus || ''; // Column J
-        row[10] = data.grade || ''; // Column K
-        row[11] = data.fullName || ''; // Column L
-        row[12] = data.phoneNumber || ''; // Column M
-        row[13] = data.email || ''; // Column N
-        row[14] = data.lineId || ''; // Column O
-        row[15] = data.age || ''; // Column P
-        row[16] = data.residenceDistrict || ''; // Column Q
-        row[17] = data.residenceProvince || ''; // Column R
-        row[18] = data.workDistrict || ''; // Column S
-        row[19] = data.workProvince || ''; // Column T
-        row[20] = data.company || ''; // Column U
-        row[21] = data.position || ''; // Column V
-        row[22] = data.occupation || ''; // Column W
-        row[23] = data.monthlyIncome || ''; // Column X
-        row[24] = data.roomType || ''; // Column Y
-        row[25] = data.budget || ''; // Column Z
-        row[26] = data.decisionTimeframe || ''; // Column AA
-        row[27] = data.purchasePurpose || ''; // Column AB
-        row[28] = data.mainRoute || ''; // Column AC
-        row[29] = data.decisionFactors || ''; // Column AD
-        row[30] = data.decisionFactors2 || ''; // Column AE
+        // Column A = running number (will be set in appendWalkInData)
+        // Columns B-F = empty/reserved
+        // Map data starting from Column G (index 6)
+        row[6] = data.salesQueue || ''; // Column G: Sales Queue
+        row[7] = this.formatDate(data.visitDate) || ''; // Column H: DATE (วันที่เข้าโครงการ)
+        row[8] = data.leadFromMonth || ''; // Column I: Lead จากเดือน (Detail)
+        row[9] = data.mediaOnline || ''; // Column J: สื่อ Online (ขนุมอมุมา)
+        row[10] = data.mediaOffline || ''; // Column K: สื่อ Offline
+        row[11] = data.walkInType || ''; // Column L: Walk-in Type
+        row[12] = data.passSiteSource || ''; // Column M: สื่อ pass site อะไรบ้าง
+        row[13] = data.latestStatus || ''; // Column N: Status สุดท้าย (unqualified/qualified)
+        row[14] = data.grade || ''; // Column O: Grade
+        row[15] = data.fullName || ''; // Column P: ชื่อลูกค้า
+        row[16] = data.phoneNumber || ''; // Column Q: เบอร์โทร
+        row[17] = data.email || ''; // Column R: อีเมล
+        row[18] = data.lineId || ''; // Column S: Line ID
+        row[19] = data.age || ''; // Column T: อายุ
+        row[20] = data.residenceDistrict || ''; // Column U
+        row[21] = data.residenceProvince || ''; // Column V
+        row[22] = data.workDistrict || ''; // Column W
+        row[23] = data.workProvince || ''; // Column X
+        row[24] = data.company || ''; // Column Y
+        row[25] = data.position || ''; // Column Z
+        row[26] = data.occupation || ''; // Column AA
+        row[27] = data.monthlyIncome || ''; // Column AB
+        row[28] = data.roomType || ''; // Column AC
+        row[29] = data.budget || ''; // Column AD
+        row[30] = data.decisionTimeframe || ''; // Column AE
+        row[31] = data.purchasePurpose || ''; // Column AF
+        row[32] = data.mainRoute || ''; // Column AG
+        row[33] = data.decisionFactors || ''; // Column AH
+        row[34] = data.decisionFactors2 || ''; // Column AI
         // Convert arrays to comma-separated strings for Google Sheets compatibility
-        row[31] = Array.isArray(data.interests) ? data.interests.join(', ') : (data.interests || '');
-        row[32] = Array.isArray(data.shoppingMalls) ? data.shoppingMalls.join(', ') : (data.shoppingMalls || '');
-        row[33] = Array.isArray(data.promotionInterest) ? data.promotionInterest.join(', ') : (data.promotionInterest || ''); // Column AH
-        row[34] = data.comparisonProjects || ''; // Column AI
-        row[35] = data.customerDetails || ''; // Column AJ
-        row[36] = data.reasonNotBooking || ''; // Column AK
-        row[37] = data.reasonNotBookingDetail || ''; // Column AL
+        row[35] = Array.isArray(data.interests) ? data.interests.join(', ') : (data.interests || ''); // Column AJ
+        row[36] = Array.isArray(data.shoppingMalls) ? data.shoppingMalls.join(', ') : (data.shoppingMalls || ''); // Column AK
+        row[37] = Array.isArray(data.promotionInterest) ? data.promotionInterest.join(', ') : (data.promotionInterest || ''); // Column AL
+        row[38] = data.comparisonProjects || ''; // Column AM
+        row[39] = data.customerDetails || ''; // Column AN
+        row[40] = data.reasonNotBooking || ''; // Column AO
+        row[41] = data.reasonNotBookingDetail || ''; // Column AP
         if (data.followUps && data.followUps.length > 0) {
             const followUpStrings = data.followUps.map(fu => {
                 const date = fu.date ? this.formatDate(fu.date) : '';
                 return `${date}: ${fu.detail}`;
             });
-            row[38] = followUpStrings.join('\n'); // Join with newline for readability
+            row[42] = followUpStrings.join('\n'); // Column AQ - Follow ups
         }
         return row;
     }
@@ -196,6 +204,34 @@ class GoogleSheetsService {
     }
     normalizePhoneNumber(phone) {
         return phone.replace(/[-\s\(\)]/g, '').replace(/^0/, '66');
+    }
+    getNextRunningNumber() {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                console.log('🔢 Getting next running number...');
+                const response = yield this.sheets.spreadsheets.values.get({
+                    spreadsheetId: google_1.GOOGLE_CONFIG.spreadsheetId,
+                    range: `${google_1.GOOGLE_CONFIG.sheetName}!A:A`
+                });
+                const rows = response.data.values || [];
+                // Skip header row and find the last numeric value
+                let maxNumber = 0;
+                for (let i = 1; i < rows.length; i++) {
+                    const value = rows[i][0];
+                    const num = parseInt(value);
+                    if (!isNaN(num) && num > maxNumber) {
+                        maxNumber = num;
+                    }
+                }
+                const nextNumber = maxNumber + 1;
+                console.log('✅ Next running number:', nextNumber);
+                return nextNumber;
+            }
+            catch (error) {
+                console.error('❌ Failed to get running number:', error);
+                return 1; // Default to 1 if error
+            }
+        });
     }
     testConnection() {
         return __awaiter(this, void 0, void 0, function* () {

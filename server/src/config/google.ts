@@ -12,24 +12,32 @@ if (!process.env.SPREADSHEET_ID) {
   throw new Error('SPREADSHEET_ID environment variable is not set');
 }
 
-// Load service account credentials from file
-import * as path from 'path';
-const serviceAccountKeyPath = path.join(__dirname, '../../service-account-key.json');
-
+// Load service account credentials from environment variable
 let serviceAccountKey: any;
 try {
-  serviceAccountKey = require(serviceAccountKeyPath);
-  console.log('✅ Service account credentials loaded from file');
-  console.log('   Project ID:', serviceAccountKey.project_id);
-  console.log('   Client Email:', serviceAccountKey.client_email);
+  if (process.env.GOOGLE_SERVICE_ACCOUNT) {
+    serviceAccountKey = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
+    
+    // Fix private key format for OpenSSL compatibility
+    if (serviceAccountKey.private_key) {
+      // Replace \n with actual newlines
+      serviceAccountKey.private_key = serviceAccountKey.private_key.replace(/\\n/g, '\n');
+    }
+    
+    console.log('✅ Service account credentials loaded from environment');
+    console.log('   Project ID:', serviceAccountKey.project_id);
+    console.log('   Client Email:', serviceAccountKey.client_email);
+  } else {
+    throw new Error('GOOGLE_SERVICE_ACCOUNT environment variable not found');
+  }
 } catch (error) {
-  console.error('❌ Failed to load service account key file:', error);
+  console.error('❌ Failed to load service account credentials:', error);
   throw error;
 }
 
-// Create Google Auth instance with keyFile instead of credentials
+// Create Google Auth instance
 export const auth = new GoogleAuth({
-  keyFile: serviceAccountKeyPath,
+  credentials: serviceAccountKey,
   scopes: [
     'https://www.googleapis.com/auth/spreadsheets',
     'https://www.googleapis.com/auth/drive'
@@ -42,7 +50,7 @@ export const sheets = google.sheets({ version: 'v4', auth });
 // Export configuration
 export const GOOGLE_CONFIG = {
   spreadsheetId: process.env.SPREADSHEET_ID,
-  sheetName: ' Walk-in 2025', // Note: space at the beginning is important
+  sheetName: 'Walk-in', // Updated to match actual sheet name
   auth,
   sheets
 };
