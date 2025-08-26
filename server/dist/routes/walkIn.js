@@ -1,0 +1,11 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const walkInController_1 = require("../controllers/walkInController");
+const router = (0, express_1.Router)();
+router.post('/submit', walkInController_1.submitWalkInForm);
+router.get('/test-connection', walkInController_1.testConnection);
+router.get('/check-customer', walkInController_1.checkCustomer);
+router.get('/dropdown-options', walkInController_1.getDropdownOptions);
+router.get('/entries', walkInController_1.getWalkInEntries);
+exports.default = router;

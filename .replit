@@ -1,14 +1,19 @@
-entrypoint = "index.js"
-modules = ["nodejs-22"]
-hidden = [".config", "package-lock.json"]
-
-[gitHubImport]
-requiredFiles = [".replit", "replit.nix", "package.json", "package-lock.json"]
+run = "npm run install-all && npm run build && npm start"
+entrypoint = "server/src/index.ts"
 
 [nix]
-channel = "stable-24_11"
+channel = "stable-22_11"
 
 [deployment]
-run = ["node", "index.js"]
-deploymentTarget = "autoscale"
-ignorePorts = false
+run = ["sh", "-c", "npm run install-all && npm run build && npm start"]
+
+[[ports]]
+localPort = 3001
+externalPort = 80
+
+[languages.typescript]
+pattern = "**/*.ts"
+syntax = "typescript"
+
+[languages.typescript.languageServer]
+start = ["typescript-language-server", "--stdio"]

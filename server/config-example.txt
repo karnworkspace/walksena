@@ -1,0 +1,10 @@
+# สร้างไฟล์ .env ในโฟลเดอร์ server/ ด้วยเนื้อหาดังนี้:
+
+# Google Sheets Configuration
+SPREADSHEET_ID=YOUR_NEW_SPREADSHEET_ID_HERE
+
+# Server Configuration
+PORT=3001
+
+# ตัวอย่าง:
+# SPREADSHEET_ID=1QpKFJ4SX2odkwJNsY51PgYN_YIzZbCfVEiVSaJMIFQY

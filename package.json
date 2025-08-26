@@ -1,15 +1,16 @@
 {
-  "name": "nodejs",
+  "name": "walksena-replit",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Walk-in Form System for SENA",
+  "main": "server/src/index.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "cd server && npm start",
+    "dev": "cd server && npm run dev",
+    "build": "cd server && npm run build && cd ../walk-in-form && npm run build",
+    "install-all": "cd server && npm install && cd ../walk-in-form && npm install"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "@types/node": "^22.13.11"
-  }
+  "dependencies": {},
+  "devDependencies": {},
+  "author": "SENA Team",
+  "license": "MIT"
 }
