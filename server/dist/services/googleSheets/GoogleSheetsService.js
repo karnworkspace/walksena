@@ -63,7 +63,7 @@ class GoogleSheetsService {
                     range: `${google_1.GOOGLE_CONFIG.sheetName}!A:CF`
                 });
                 const rows = response.data.values || [];
-                // Skip header row, check column Q (index 16) for phone numbers
+                // Skip header row, check column Q (index 16) for phone numbers  
                 // Note: Phone number is now in column Q (index 16)
                 for (let i = 1; i < rows.length; i++) {
                     const row = rows[i];
@@ -149,7 +149,7 @@ class GoogleSheetsService {
     mapDataToSheetRow(data) {
         const row = new Array(84).fill(''); // 84 columns (A-CF)
         // Column A = running number (will be set in appendWalkInData)
-        // Columns B-F = empty/reserved
+        // Columns B-F = empty/reserved  
         // Map data starting from Column G (index 6)
         row[6] = data.salesQueue || ''; // Column G: Sales Queue
         row[7] = this.formatDate(data.visitDate) || ''; // Column H: DATE (วันที่เข้าโครงการ)
