@@ -153,7 +153,7 @@ const Step5Assessment: React.FC = () => {
                   name={[name, 'date']}
                   rules={[{ required: true, message: 'กรุณาเลือกวันที่' }]}
                 >
-                  <DatePicker placeholder="วันที่ดำเนินการติดตาม" />
+                  <DatePicker placeholder="วันที่ดำเนินการติดตาม" format="DD/MM/YYYY" />
                 </Form.Item>
                 <Form.Item
                   {...restField}
@@ -166,7 +166,13 @@ const Step5Assessment: React.FC = () => {
               </Space>
             ))}
             <Form.Item>
-              <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>
+              <Button 
+                type="dashed" 
+                onClick={() => add()} 
+                block 
+                icon={<PlusOutlined />} 
+                disabled={fields.length >= 2}
+              >
                 เพิ่มการติดตาม
               </Button>
             </Form.Item>

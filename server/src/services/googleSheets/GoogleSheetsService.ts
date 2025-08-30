@@ -243,12 +243,18 @@ export class GoogleSheetsService {
     row[41] = data.reasonNotBooking || '';            // Column AP
     row[42] = data.reasonNotBookingDetail || '';      // Column AQ
 
+    // Follow-ups (max 2): AT (index 45), AU (index 46)
     if (data.followUps && data.followUps.length > 0) {
-      const followUpStrings = data.followUps.map(fu => {
-        const date = fu.date ? this.formatDate(fu.date) : '';
-        return `${date}: ${fu.detail}`;
-      });
-      row[43] = followUpStrings.join('\n'); // Column AR - Follow ups
+      const f1 = data.followUps[0];
+      if (f1) {
+        const date = f1.date ? this.formatDate(f1.date) : '';
+        row[45] = `${date}${date ? ': ' : ''}${f1.detail || ''}`; // Column AT
+      }
+      const f2 = data.followUps[1];
+      if (f2) {
+        const date = f2.date ? this.formatDate(f2.date) : '';
+        row[46] = `${date}${date ? ': ' : ''}${f2.detail || ''}`; // Column AU
+      }
     }
 
     return row;

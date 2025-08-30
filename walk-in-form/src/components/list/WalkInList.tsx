@@ -29,12 +29,28 @@ const WalkInList: React.FC<WalkInListProps> = ({ onEdit, onView }) => {
   const [data, setData] = useState<WalkInData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [pageSize, setPageSize] = useState<number>(20);
+  const [currentPage, setCurrentPage] = useState<number>(1);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const response = await axios.get('http://localhost:3001/api/walkin/entries');
-        setData(response.data.data || []);
+        const raw: WalkInData[] = response.data.data || [];
+
+        const getNo = (r: WalkInData) => {
+          const n = parseInt(
+            String(
+              r['No.'] || r['No'] || (r as any)['NO'] || (r as any)['no'] || (r as any)['Running Number'] || (r as any)['RowId'] || 0
+            ),
+            10
+          );
+          return isNaN(n) ? 0 : n;
+        };
+
+        // Sort latest first by running number (desc)
+        const sorted = [...raw].sort((a, b) => getNo(b) - getNo(a));
+        setData(sorted);
       } catch (err) {
         setError('Failed to fetch data');
       }
@@ -252,15 +268,20 @@ const WalkInList: React.FC<WalkInListProps> = ({ onEdit, onView }) => {
       <Table
         dataSource={data}
         columns={columns}
-        rowKey={record => record['No.'] || Math.random().toString()}
+        rowKey={record => record['No.'] || (record as any)['No'] || Math.random().toString()}
         scroll={{ y: 600 }}
         size="middle"
         pagination={{
-          pageSize: 20,
+          current: currentPage,
+          pageSize,
           showSizeChanger: true,
+          pageSizeOptions: ['10', '20', '50', '100'],
           showQuickJumper: true,
-          showTotal: (total, range) => 
-            `${range[0]}-${range[1]} of ${total} items`,
+          showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} items`,
+          onChange: (page, size) => {
+            setCurrentPage(page);
+            if (size && size !== pageSize) setPageSize(size);
+          },
         }}
         className="responsive-table"
       />
@@ -333,15 +354,20 @@ const WalkInList: React.FC<WalkInListProps> = ({ onEdit, onView }) => {
       <Table
         dataSource={data}
         columns={columns}
-        rowKey={record => record['No.'] || Math.random().toString()}
+        rowKey={record => record['No.'] || (record as any)['No'] || Math.random().toString()}
         scroll={{ y: 500 }}
         size="small"
         pagination={{
-          pageSize: 15,
-          showSizeChanger: false,
-          showQuickJumper: false,
-          showTotal: (total, range) => 
-            `${range[0]}-${range[1]} of ${total}`,
+          current: currentPage,
+          pageSize,
+          showSizeChanger: true,
+          pageSizeOptions: ['10', '20', '50', '100'],
+          showQuickJumper: true,
+          showTotal: (total, range) => `${range[0]}-${range[1]} of ${total}`,
+          onChange: (page, size) => {
+            setCurrentPage(page);
+            if (size && size !== pageSize) setPageSize(size);
+          },
         }}
       />
     );
