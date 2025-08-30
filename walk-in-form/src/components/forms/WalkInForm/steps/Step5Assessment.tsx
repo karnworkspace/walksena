@@ -147,23 +147,35 @@ const Step5Assessment: React.FC = () => {
         {(fields, { add, remove }) => (
           <>
             {fields.map(({ key, name, ...restField }) => (
-              <Space key={key} style={{ display: 'flex', marginBottom: 8 }} align="baseline">
+              <div
+                key={key}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '240px 1fr 24px',
+                  alignItems: 'center',
+                  gap: 8,
+                  marginBottom: 8,
+                  width: '100%'
+                }}
+              >
                 <Form.Item
                   {...restField}
                   name={[name, 'date']}
                   rules={[{ required: true, message: 'กรุณาเลือกวันที่' }]}
+                  style={{ margin: 0 }}
                 >
-                  <DatePicker placeholder="วันที่ดำเนินการติดตาม" format="DD/MM/YYYY" />
+                  <DatePicker style={{ width: '100%' }} placeholder="วันที่ดำเนินการติดตาม" format="DD/MM/YYYY" />
                 </Form.Item>
                 <Form.Item
                   {...restField}
                   name={[name, 'detail']}
                   rules={[{ required: true, message: 'กรุณากรอกรายละเอียด' }]}
+                  style={{ margin: 0 }}
                 >
-                  <Input placeholder="รายละเอียดการติดตาม" />
+                  <Input style={{ width: '100%' }} placeholder="รายละเอียดการติดตาม" />
                 </Form.Item>
-                <MinusCircleOutlined onClick={() => remove(name)} />
-              </Space>
+                <MinusCircleOutlined onClick={() => remove(name)} style={{ fontSize: 16, color: '#999' }} />
+              </div>
             ))}
             <Form.Item>
               <Button 

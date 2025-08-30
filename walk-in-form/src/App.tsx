@@ -3,7 +3,7 @@ import { ConfigProvider, Button, Typography } from 'antd';
 import { useDispatch } from 'react-redux';
 import WalkInForm from './components/forms/WalkInForm/WalkInForm';
 import WalkInList from './components/list/WalkInList';
-import { setEditMode, setViewMode } from './store/slices/walkInFormSlice';
+import { setEditMode, setViewMode, clearForm } from './store/slices/walkInFormSlice';
 import { convertGoogleSheetsToFormData } from './utils/dataConverter';
 import { AppDispatch } from './store';
 import senaLogo from './assets/sena logo.png';
@@ -47,14 +47,26 @@ const App: React.FC = () => {
                 {view === 'form' ? 'Walk-in Form 2025' : 'Walk-in Records'}
               </Title>
             </div>
-            <Button 
-              type="primary" 
-              size="large" 
-              className="view-toggle-btn"
-              onClick={() => setView(view === 'form' ? 'list' : 'form')}
-            >
-              {view === 'form' ? '📋 View List' : '📝 View Form'}
-            </Button>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <Button 
+                type={view === 'list' ? 'primary' : 'default'} 
+                size="large" 
+                onClick={() => setView('list')}
+              >
+                📋 View List
+              </Button>
+              <Button 
+                type={view === 'form' ? 'primary' : 'default'} 
+                size="large" 
+                onClick={() => {
+                  // clear any edit/view state and start a fresh form
+                  dispatch(clearForm());
+                  setView('form');
+                }}
+              >
+                📝 Create New Customer
+              </Button>
+            </div>
           </div>
           {view === 'form' ? (
             <WalkInForm onSubmitted={() => setView('list')} onHome={() => setView('list')} />

@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Form, Card, Typography } from 'antd';
+import { Form, Card, Typography, Input } from 'antd';
 
 const { Text } = Typography;
 
@@ -365,6 +365,11 @@ const Step4Preferences: React.FC = () => {
             />
           )}
         </Form.Item>
+      </Form.Item>
+
+      {/* โครงการเปรียบเทียบ (Column AN) */}
+      <Form.Item label="โครงการเปรียบเทียบ" name="comparisonProjects">
+        <Input placeholder="พิมพ์ชื่อโครงการเปรียบเทียบ" />
       </Form.Item>
     </div>
   );

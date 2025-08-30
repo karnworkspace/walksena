@@ -130,7 +130,7 @@ const Step3LocationWork: React.FC = () => {
     <div>
       <Form.Item label="จังหวัดที่พักอาศัย" name="residenceProvince">
         <Select
-          placeholder="เลือกจังหวัด"
+          placeholder="เลือก หรือสามารถพิมพ์เพื่อค้นหาจังหวัด"
           showSearch
           optionFilterProp="children"
           filterOption={(input, option) =>
@@ -147,7 +147,7 @@ const Step3LocationWork: React.FC = () => {
 
       <Form.Item label="เขตที่พักอาศัย" name="residenceDistrict">
         <Select
-          placeholder="เลือกเขต"
+          placeholder="เลือก หรือสามารถพิมพ์เพื่อค้นหาเขต"
           showSearch
           optionFilterProp="children"
           filterOption={(input, option) =>
@@ -197,11 +197,11 @@ const Step3LocationWork: React.FC = () => {
       </Form.Item>
 
       <Form.Item label="บริษัท" name="company">
-        <Input placeholder="กรอกชื่อบริษัท" />
+        <Input placeholder="พิมพ์ชื่อบริษัท" />
       </Form.Item>
 
       <Form.Item label="ตำแหน่ง" name="position">
-        <Input placeholder="กรอกตำแหน่งงาน" />
+        <Input placeholder="พิมพ์ตำแหน่งงาน" />
       </Form.Item>
 
       <Form.Item label="อาชีพ" name="occupation">
