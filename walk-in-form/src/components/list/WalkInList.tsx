@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Spin, Alert, Card, Tag, Typography, Row, Col, Button } from 'antd';
+import { Table, Spin, Alert, Card, Tag, Typography, Row, Col, Button, Modal, Descriptions } from 'antd';
 import { UserOutlined, PhoneOutlined, MailOutlined, EditOutlined } from '@ant-design/icons';
 import axios from 'axios';
 
@@ -31,6 +31,19 @@ const WalkInList: React.FC<WalkInListProps> = ({ onEdit, onView }) => {
   const [error, setError] = useState<string | null>(null);
   const [pageSize, setPageSize] = useState<number>(20);
   const [currentPage, setCurrentPage] = useState<number>(1);
+  const [aiVisible, setAiVisible] = useState(false);
+  const [aiSummary, setAiSummary] = useState<{ ai1?: string; ai2?: string; ai3?: string; ai4?: string }>({});
+
+  // Helper: robustly pick AI1-AI4 from a record (tolerate spaces/case)
+  const pickAI = (obj: any, target: string) => {
+    if (!obj) return undefined;
+    const wanted = target.toUpperCase();
+    for (const key of Object.keys(obj)) {
+      const norm = String(key).replace(/\s+/g, '').toUpperCase();
+      if (norm === wanted) return (obj as any)[key];
+    }
+    return undefined;
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -226,6 +239,28 @@ const WalkInList: React.FC<WalkInListProps> = ({ onEdit, onView }) => {
         ),
       },
       {
+        title: 'AI',
+        key: 'ai',
+        width: '70px',
+        render: (_: any, record: WalkInData) => (
+          <Button
+            type="primary"
+            shape="round"
+            size="small"
+            onClick={() => {
+              const ai1 = pickAI(record, 'AI1');
+              const ai2 = pickAI(record, 'AI2');
+              const ai3 = pickAI(record, 'AI3');
+              const ai4 = pickAI(record, 'AI4');
+              setAiSummary({ ai1, ai2, ai3, ai4 });
+              setAiVisible(true);
+            }}
+          >
+            AI
+          </Button>
+        ),
+      },
+      {
         title: 'Status',
         key: 'statusInfo', 
         render: (_: any, record: WalkInData) => (
@@ -333,6 +368,28 @@ const WalkInList: React.FC<WalkInListProps> = ({ onEdit, onView }) => {
         ),
       },
       {
+        title: 'AI',
+        key: 'ai',
+        width: '60px',
+        render: (_: any, record: WalkInData) => (
+          <Button
+            type="primary"
+            shape="round"
+            size="small"
+            onClick={() => {
+              const ai1 = pickAI(record, 'AI1');
+              const ai2 = pickAI(record, 'AI2');
+              const ai3 = pickAI(record, 'AI3');
+              const ai4 = pickAI(record, 'AI4');
+              setAiSummary({ ai1, ai2, ai3, ai4 });
+              setAiVisible(true);
+            }}
+          >
+            AI
+          </Button>
+        ),
+      },
+      {
         title: 'Actions',
         key: 'actions',
         width: '80px',
@@ -396,6 +453,24 @@ const WalkInList: React.FC<WalkInListProps> = ({ onEdit, onView }) => {
       className="form-card"
     >
       {getResponsiveView()}
+
+      <Modal
+        title="ผลการสรุปจาก AI"
+        open={aiVisible}
+        onCancel={() => setAiVisible(false)}
+        footer={[
+          <Button key="close" type="primary" onClick={() => setAiVisible(false)}>ปิด</Button>
+        ]}
+      >
+        <Descriptions column={1} size="small" bordered>
+          <Descriptions.Item label="สถานะ">{aiSummary.ai1 || '—'}</Descriptions.Item>
+          <Descriptions.Item label="วัตถุประสงค์">{aiSummary.ai2 || '—'}</Descriptions.Item>
+          <Descriptions.Item label="สาเหตุ">{aiSummary.ai3 || '—'}</Descriptions.Item>
+          <Descriptions.Item label="รายละเอียด">
+            <div style={{ whiteSpace: 'pre-wrap' }}>{aiSummary.ai4 || '—'}</div>
+          </Descriptions.Item>
+        </Descriptions>
+      </Modal>
     </Card>
   );
 };

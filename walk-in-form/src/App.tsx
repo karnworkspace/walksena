@@ -16,6 +16,17 @@ const App: React.FC = () => {
   const [view, setView] = useState('form');
   const dispatch = useDispatch<AppDispatch>();
 
+  // Helper to pick AI fields like AI1-AI4 robustly (tolerate spaces/case)
+  const pickAI = (obj: any, target: string) => {
+    if (!obj) return undefined;
+    const wanted = target.toUpperCase();
+    for (const key of Object.keys(obj)) {
+      const norm = String(key).replace(/\s+/g, '').toUpperCase();
+      if (norm === wanted) return (obj as any)[key];
+    }
+    return undefined;
+  };
+
   return (
     <ConfigProvider
       theme={{
@@ -113,6 +124,17 @@ const App: React.FC = () => {
                       ''
                     ).trim();
 
+                  // Extract optional AI summary fields from the row (best-effort mapping)
+                  const aiStatus = pickAI(record, 'AI1');      // สถานะ
+                  const aiObjective = pickAI(record, 'AI2');   // วัตถุประสงค์
+                  const aiCause = pickAI(record, 'AI3');       // สาเหตุ
+                  const aiDetail = pickAI(record, 'AI4');      // รายละเอียด
+
+                  if (aiStatus) (cleanFormData as any).aiStatus = aiStatus;
+                  if (aiObjective) (cleanFormData as any).aiObjective = aiObjective;
+                  if (aiCause) (cleanFormData as any).aiCause = aiCause;
+                  if (aiDetail) (cleanFormData as any).aiDetail = aiDetail;
+
                   // Attach running number into form data as well
                   const parsedNo = parseInt(runningNo, 10);
                   if (!isNaN(parsedNo)) {
@@ -191,6 +213,17 @@ const App: React.FC = () => {
                       record['RunningNo'] ||
                       ''
                     ).trim();
+
+                  // Extract optional AI summary fields from the row (best-effort mapping)
+                  const aiStatus = pickAI(record, 'AI1');
+                  const aiObjective = pickAI(record, 'AI2');
+                  const aiCause = pickAI(record, 'AI3');
+                  const aiDetail = pickAI(record, 'AI4');
+
+                  if (aiStatus) (cleanFormData as any).aiStatus = aiStatus;
+                  if (aiObjective) (cleanFormData as any).aiObjective = aiObjective;
+                  if (aiCause) (cleanFormData as any).aiCause = aiCause;
+                  if (aiDetail) (cleanFormData as any).aiDetail = aiDetail;
 
                   const parsedNo = parseInt(runningNo, 10);
                   if (!isNaN(parsedNo)) {

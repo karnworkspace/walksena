@@ -1,6 +1,6 @@
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Form, Button, Steps, Divider } from 'antd';
+import { Form, Button, Steps, Divider, Modal, Descriptions } from 'antd';
 import { useSelector, useDispatch } from 'react-redux';
 import axios from 'axios';
 import { RootState, AppDispatch } from '../../../store';
@@ -65,6 +65,7 @@ const WalkInForm: React.FC<WalkInFormProps> = ({ onSubmitted, onHome }) => {
   const sectionRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [activeSection, setActiveSection] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [aiVisible, setAiVisible] = useState(false);
 
   useEffect(() => {
     const processedFormData: any = { ...formData };
@@ -299,6 +300,14 @@ const WalkInForm: React.FC<WalkInFormProps> = ({ onSubmitted, onHome }) => {
                 {isViewMode ? '← Back to List' : '✕ Cancel Edit'}
               </Button>
             )}
+            {isEditMode && (
+              <Button 
+                onClick={() => setAiVisible(true)}
+                style={{ background: '#f6ffed', borderColor: '#b7eb8f' }}
+              >
+                ผลการสรุปจาก AI
+              </Button>
+            )}
             {!isViewMode && (
               <Button 
                 onClick={handleSaveDraft}
@@ -434,6 +443,37 @@ const WalkInForm: React.FC<WalkInFormProps> = ({ onSubmitted, onHome }) => {
           </Button>
         )}
       </div>
+
+      {/* AI Summary Modal */}
+      <Modal
+        title="ผลการสรุปจาก AI"
+        open={aiVisible}
+        onCancel={() => setAiVisible(false)}
+        footer={[
+          <Button key="close" type="primary" onClick={() => setAiVisible(false)}>ปิด</Button>
+        ]}
+      >
+        <Form.Item noStyle shouldUpdate>
+          {() => {
+            // Use "true" to get all values, including unregistered ones (aiStatus/aiObjective/aiCause/aiDetail)
+            const values = form.getFieldsValue(true);
+            const aiStatus = values.aiStatus || '—';
+            const aiObjective = values.aiObjective || '—';
+            const aiCause = values.aiCause || '—';
+            const aiDetail = values.aiDetail || values.customerDetails || '—';
+            return (
+              <Descriptions column={1} size="small" bordered>
+                <Descriptions.Item label="สถานะ">{aiStatus}</Descriptions.Item>
+                <Descriptions.Item label="วัตถุประสงค์">{aiObjective}</Descriptions.Item>
+                <Descriptions.Item label="สาเหตุ">{aiCause}</Descriptions.Item>
+                <Descriptions.Item label="รายละเอียด">
+                  <div style={{ whiteSpace: 'pre-wrap' }}>{aiDetail}</div>
+                </Descriptions.Item>
+              </Descriptions>
+            );
+          }}
+        </Form.Item>
+      </Modal>
     </div>
   );
 };
