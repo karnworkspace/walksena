@@ -100,10 +100,23 @@ const App: React.FC = () => {
                   
                   console.log('Clean form data:', cleanFormData);
                   
+                  // Derive running number (robust across header variants)
+                  const runningNo =
+                    String(
+                      record['No.'] ||
+                      (formData as any).no ||
+                      record['No'] ||
+                      record['NO'] ||
+                      record['no'] ||
+                      record['Running Number'] ||
+                      record['RunningNo'] ||
+                      ''
+                    ).trim();
+
                   // Set edit mode with the converted data
                   dispatch(setEditMode({
                     isEdit: true,
-                    recordId: record['No.'] || undefined,
+                    recordId: runningNo || undefined,
                     formData: cleanFormData
                   }));
                   
@@ -160,9 +173,22 @@ const App: React.FC = () => {
                   
                   console.log('Clean form data for view:', cleanFormData);
                   
+                  // Derive running number (robust across header variants)
+                  const runningNo =
+                    String(
+                      record['No.'] ||
+                      (formData as any).no ||
+                      record['No'] ||
+                      record['NO'] ||
+                      record['no'] ||
+                      record['Running Number'] ||
+                      record['RunningNo'] ||
+                      ''
+                    ).trim();
+
                   // Set view mode with the converted data
                   dispatch(setViewMode({
-                    recordId: record['No.'] || undefined,
+                    recordId: runningNo || undefined,
                     formData: cleanFormData
                   }));
                   

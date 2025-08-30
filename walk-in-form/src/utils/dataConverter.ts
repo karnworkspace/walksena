@@ -171,7 +171,7 @@ export function convertGoogleSheetsToFormData(sheetsData: GoogleSheetsData): For
   };
 
   const formData = {
-    no: sheetsData['No.'] ? parseInt(sheetsData['No.']) : undefined,
+    no: sheetsData['No.'] ? parseInt(sheetsData['No.']) : (sheetsData['No'] ? parseInt(sheetsData['No']) : undefined),
     month: sheetsData['Month'],
     salesQueue: sheetsData['Sales Queue'],
     // Parse visit date from sheet (Column I: DATE ( เข้าชมโครงการ ))
