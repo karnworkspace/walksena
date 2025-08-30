@@ -174,9 +174,8 @@ export function convertGoogleSheetsToFormData(sheetsData: GoogleSheetsData): For
     no: sheetsData['No.'] ? parseInt(sheetsData['No.']) : undefined,
     month: sheetsData['Month'],
     salesQueue: sheetsData['Sales Queue'],
-    // Temporarily disable date parsing to avoid errors
-    // visitDate: parseDate(sheetsData['DATE ( เข้าชมโครงการ )']),
-    visitDate: null, // Will be manually set if needed
+    // Parse visit date from sheet (Column I: DATE ( เข้าชมโครงการ ))
+    visitDate: parseDate(sheetsData['DATE ( เข้าชมโครงการ )']) || null,
     leadFromMonth: sheetsData['Lead จากเดือน ( Detail )'],
     mediaOnline: sheetsData['สื่อ Online (แบบสอบถาม)'],
     mediaOffline: sheetsData['สื่อ Offline'],

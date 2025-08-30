@@ -5,7 +5,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import axios from 'axios';
 import { RootState, AppDispatch } from '../../../store';
 import { setCurrentStep, updateFormData, clearForm } from '../../../store/slices/walkInFormSlice';
-import { convertFormDatesForAPI } from '../../../utils/dateUtils';
+import { convertFormDatesForAPI, safeParseDate } from '../../../utils/dateUtils';
 import Step1VisitInfo from './steps/Step1VisitInfo';
 import Step2CustomerInfo from './steps/Step2CustomerInfo';
 import Step3LocationWork from './steps/Step3LocationWork';
@@ -62,13 +62,17 @@ const WalkInForm: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Don't process dates here - let the form handle them naturally
     const processedFormData: any = { ...formData };
-    
+
+    // Convert visitDate string -> dayjs for DatePicker display
+    if (typeof processedFormData.visitDate === 'string') {
+      const d = safeParseDate(processedFormData.visitDate);
+      processedFormData.visitDate = d || null;
+    }
+
     console.log('Original form data:', formData);
     console.log('Setting form values:', processedFormData);
-    
-    // Set form values directly without date conversion
+
     form.setFieldsValue(processedFormData);
   }, [formData, form]);
 
