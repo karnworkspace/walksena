@@ -106,7 +106,7 @@ const Step1VisitInfo: React.FC = () => {
       >
         <DatePicker 
           style={{ width: '100%' }} 
-          format="YYYY-MM-DD"
+          format="DD/MM/YYYY"
           placeholder="เลือกวันที่"
           allowClear
         />
