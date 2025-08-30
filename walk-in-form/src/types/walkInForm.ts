@@ -2,6 +2,8 @@
 // Based on developer_specification.md
 
 export interface WalkInFormData {
+  // Meta
+  no?: number | null;
   // Step 1
   visitDate?: string | null;
   salesQueue?: string;

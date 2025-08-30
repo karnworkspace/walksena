@@ -25,6 +25,7 @@ interface GoogleSheetsData {
   'ตำแหน่ง'?: string;
   'อาชีพ'?: string;
   'รายได้ต่อเดือน '?: string;
+  'รายได้ต่อเดือน'?: string;
   'รูปแบบห้องที่ต้องการ '?: string;
   'งบประมาณในการซื้อ'?: string;
   'ระยะเวลาในการตัดสินใจ'?: string;
@@ -71,7 +72,7 @@ interface FormData {
   company?: string;
   position?: string;
   occupation?: string;
-  monthlyIncome?: number | null;
+  monthlyIncome?: string | number | null;
 
   // Step 4
   roomType?: string;
@@ -200,7 +201,7 @@ export function convertGoogleSheetsToFormData(sheetsData: GoogleSheetsData): For
     company: sheetsData['บริษัทที่ทำงาน'],
     position: sheetsData['ตำแหน่ง'],
     occupation: sheetsData['อาชีพ'],
-    monthlyIncome: null, // Will be handled as string selection in form
+    monthlyIncome: sheetsData['รายได้ต่อเดือน '] || sheetsData['รายได้ต่อเดือน'] || null,
     roomType: sheetsData['รูปแบบห้องที่ต้องการ '],
     budget: null, // Will be handled as string selection in form
     decisionTimeframe: sheetsData['ระยะเวลาในการตัดสินใจ'],

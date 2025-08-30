@@ -113,6 +113,25 @@ const App: React.FC = () => {
                       ''
                     ).trim();
 
+                  // Derive running number (robust across header variants)
+                  const runningNo =
+                    String(
+                      record['No.'] ||
+                      (formData as any).no ||
+                      record['No'] ||
+                      record['NO'] ||
+                      record['no'] ||
+                      record['Running Number'] ||
+                      record['RunningNo'] ||
+                      ''
+                    ).trim();
+
+                  // Attach running number into form data as well
+                  const parsedNo = parseInt(runningNo, 10);
+                  if (!isNaN(parsedNo)) {
+                    (cleanFormData as any).no = parsedNo;
+                  }
+
                   // Set edit mode with the converted data
                   dispatch(setEditMode({
                     isEdit: true,
@@ -185,6 +204,24 @@ const App: React.FC = () => {
                       record['RunningNo'] ||
                       ''
                     ).trim();
+
+                  // Derive running number (robust across header variants)
+                  const runningNo =
+                    String(
+                      record['No.'] ||
+                      (formData as any).no ||
+                      record['No'] ||
+                      record['NO'] ||
+                      record['no'] ||
+                      record['Running Number'] ||
+                      record['RunningNo'] ||
+                      ''
+                    ).trim();
+
+                  const parsedNo = parseInt(runningNo, 10);
+                  if (!isNaN(parsedNo)) {
+                    (cleanFormData as any).no = parsedNo;
+                  }
 
                   // Set view mode with the converted data
                   dispatch(setViewMode({
