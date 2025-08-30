@@ -154,7 +154,7 @@ export function convertGoogleSheetsToFormData(sheetsData: GoogleSheetsData): For
     }
   };
 
-  // Parse age from age range string
+  // Parse age number fallback
   const parseAge = (ageStr?: string): number | undefined => {
     if (!ageStr) return undefined;
     const match = ageStr.match(/(\d+)/);
@@ -193,7 +193,10 @@ export function convertGoogleSheetsToFormData(sheetsData: GoogleSheetsData): For
     phoneNumber: sheetsData['หมายเลขโทรศัพท์'],
     email: sheetsData['Email'],
     lineId: sheetsData['Line ID'],
-    age: parseAge(sheetsData['อายุ ( เลือกอายุ )']),
+    // Age: prefer the original range string if available; fallback to parsed number
+    age: sheetsData['อายุ ( เลือกอายุ )'] && String(sheetsData['อายุ ( เลือกอายุ )']).trim() !== ''
+      ? String(sheetsData['อายุ ( เลือกอายุ )']).trim()
+      : parseAge(sheetsData['อายุ ( เลือกอายุ )']),
     residenceDistrict: sheetsData['เขตที่อยู่ปัจจุบัน'],
     residenceProvince: sheetsData['จังหวัดที่อยู่'],
     workDistrict: sheetsData['เขตที่ทำงาน'],

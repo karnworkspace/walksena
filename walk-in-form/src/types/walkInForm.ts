@@ -17,7 +17,7 @@ export interface WalkInFormData {
   phoneNumber?: string;
   email?: string;
   lineId?: string;
-  age?: number | null;
+  age?: string | number | null;
 
   // Step 3
   residenceDistrict?: string;
