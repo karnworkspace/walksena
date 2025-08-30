@@ -128,6 +128,50 @@ export class GoogleSheetsService {
     }
   }
 
+  async updateByRunningNumber(no: number, data: WalkInFormData): Promise<{ success: boolean; rowNumber?: number; error?: string }> {
+    try {
+      // Fetch rows to find the row index for given running number in Column A (index 0)
+      const response = await this.sheets.spreadsheets.values.get({
+        spreadsheetId: GOOGLE_CONFIG.spreadsheetId,
+        range: `${GOOGLE_CONFIG.sheetName}!A:CF`,
+      });
+
+      const rows = response.data.values || [];
+      let targetRowIndex = -1; // 0-based including header
+
+      for (let i = 1; i < rows.length; i++) { // skip header row
+        const rowNo = rows[i][0];
+        if (rowNo && Number(rowNo) === Number(no)) {
+          targetRowIndex = i; // 0-based
+          break;
+        }
+      }
+
+      if (targetRowIndex === -1) {
+        return { success: false, error: `Running number ${no} not found` };
+      }
+
+      const rowNumber = targetRowIndex + 1; // 1-based for sheet
+      const values = this.mapDataToSheetRow({ ...data, no });
+      values[0] = no; // keep running number
+
+      await this.sheets.spreadsheets.values.update({
+        spreadsheetId: GOOGLE_CONFIG.spreadsheetId,
+        range: `${GOOGLE_CONFIG.sheetName}!A${rowNumber}:CF${rowNumber}`,
+        valueInputOption: 'USER_ENTERED',
+        requestBody: {
+          values: [values]
+        }
+      });
+
+      return { success: true, rowNumber };
+
+    } catch (error) {
+      console.error('❌ Failed to update row:', error);
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+
   async getUniqueValues(columnIndex: number, maxRows: number = 100): Promise<string[]> {
     try {
       const response = await this.sheets.spreadsheets.values.get({

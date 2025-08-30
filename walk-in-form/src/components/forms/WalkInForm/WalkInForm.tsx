@@ -189,7 +189,19 @@ const WalkInForm: React.FC = () => {
           const finalData = convertFormDatesForAPI(submissionData);
           console.log('Submitting data:', finalData, 'isDraft:', isDraft);
 
-          const response = await axios.post('http://localhost:3001/api/walkin/submit', finalData);
+          // Include running number when editing
+          if (isEditMode && !finalData.no && editingRecordId) {
+            const parsedNo = parseInt(String(editingRecordId), 10);
+            if (!isNaN(parsedNo)) {
+              (finalData as any).no = parsedNo;
+            }
+          }
+
+          const endpoint = isEditMode 
+            ? 'http://localhost:3001/api/walkin/update' 
+            : 'http://localhost:3001/api/walkin/submit';
+
+          const response = await axios.post(endpoint, finalData);
 
           if (response.data.success) {
             const message = isDraft ? 
