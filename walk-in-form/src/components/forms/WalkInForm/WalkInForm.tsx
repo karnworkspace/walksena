@@ -308,7 +308,6 @@ const WalkInForm: React.FC = () => {
           layout="vertical" 
           autoComplete="off" 
           onValuesChange={handleValuesChange} 
-          initialValues={formData}
           size="large"
           disabled={isViewMode}
         >
