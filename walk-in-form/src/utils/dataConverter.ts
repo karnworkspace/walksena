@@ -37,6 +37,8 @@ interface GoogleSheetsData {
   'โปรโมชั่นที่สนใจ'?: string;
   'โครงการเปรียบเทียบ'?: string;
   'รายละเอียดลูกค้า'?: string;
+  'รายละเอียดลูกค้า(AI)'?: string;
+  'รายละเอียดลูกค้า (AI)'?: string;
   'สรุปเหตุผลลูกค้าไม่จอง'?: string;
   'เหตุผลไม่จอง'?: string;
   'วันที่ '?: string;
@@ -159,6 +161,15 @@ export function convertGoogleSheetsToFormData(sheetsData: GoogleSheetsData): For
     return str.split(',').map(item => item.trim()).filter(item => item.length > 0);
   };
 
+  // Helper to read first available value from possible header variants
+  const fromAny = (...keys: (keyof GoogleSheetsData)[]): string | undefined => {
+    for (const k of keys) {
+      const v = sheetsData[k];
+      if (typeof v === 'string' && v.trim() !== '') return v;
+    }
+    return undefined;
+  };
+
   const formData = {
     no: sheetsData['No.'] ? parseInt(sheetsData['No.']) : undefined,
     month: sheetsData['Month'],
@@ -197,7 +208,7 @@ export function convertGoogleSheetsToFormData(sheetsData: GoogleSheetsData): For
     shoppingMalls: splitToArray(sheetsData['ห้างสรรพสินค้าที่ชอปบ่อยๆ']),
     promotionInterest: splitToArray(sheetsData['โปรโมชั่นที่สนใจ']),
     comparisonProjects: sheetsData['โครงการเปรียบเทียบ'],
-    customerDetails: sheetsData['รายละเอียดลูกค้า'],
+    customerDetails: fromAny('รายละเอียดลูกค้า', 'รายละเอียดลูกค้า(AI)', 'รายละเอียดลูกค้า (AI)'),
     reasonNotBooking: sheetsData['สรุปเหตุผลลูกค้าไม่จอง'],
     reasonNotBookingDetail: sheetsData['เหตุผลไม่จอง'],
     followUpDate: parseDate(sheetsData['วันที่ ']),
