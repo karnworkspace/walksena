@@ -1,8 +1,9 @@
 
 import React from 'react';
-import { Form, Input, Select, InputNumber } from 'antd';
+import { Form, Input, Select, InputNumber, Card, Typography } from 'antd';
 
 const { Option } = Select;
+const { Text } = Typography;
 
 // 77 จังหวัดของประเทศไทย
 const thailandProvinces = [
@@ -62,11 +63,74 @@ const incomeRanges = [
 ];
 
 const Step3LocationWork: React.FC = () => {
+  // Reusable single-select clickable list (same style as Step 4)
+  const ClickableList: React.FC<{
+    title: string;
+    options: string[];
+    value?: string;
+    onChange: (value: string) => void;
+    placeholder?: string;
+  }> = ({ title, options, value, onChange, placeholder }) => (
+    <Card 
+      size="small" 
+      style={{ 
+        borderRadius: '8px',
+        border: value ? '2px solid #1890ff' : '1px solid #d9d9d9'
+      }}
+    >
+      <div style={{ marginBottom: '12px' }}>
+        <Text strong style={{ color: '#1890ff' }}>
+          {title}
+        </Text>
+        {placeholder && !value && (
+          <Text type="secondary" style={{ fontSize: '12px', marginLeft: '8px' }}>
+            ({placeholder})
+          </Text>
+        )}
+      </div>
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+        gap: '8px'
+      }}>
+        {options?.map(option => (
+          <div
+            key={option}
+            onClick={() => onChange(option)}
+            style={{
+              padding: '8px 12px',
+              borderRadius: '6px',
+              border: value === option ? '2px solid #1890ff' : '1px solid #e0e0e0',
+              backgroundColor: value === option ? '#f0f8ff' : '#fff',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              fontSize: '14px',
+              textAlign: 'center'
+            }}
+            onMouseEnter={(e) => {
+              if (value !== option) {
+                e.currentTarget.style.backgroundColor = '#f5f5f5';
+                e.currentTarget.style.borderColor = '#1890ff';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (value !== option) {
+                e.currentTarget.style.backgroundColor = '#fff';
+                e.currentTarget.style.borderColor = '#e0e0e0';
+              }
+            }}
+          >
+            {option}
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
   return (
     <div>
       <Form.Item label="จังหวัดที่พักอาศัย" name="residenceProvince">
         <Select
-          placeholder="เลือกจังหวัด"
+          placeholder="เลือก หรือสามารถพิมพ์เพื่อค้นหาจังหวัด"
           showSearch
           optionFilterProp="children"
           filterOption={(input, option) =>
@@ -83,7 +147,7 @@ const Step3LocationWork: React.FC = () => {
 
       <Form.Item label="เขตที่พักอาศัย" name="residenceDistrict">
         <Select
-          placeholder="เลือกเขต"
+          placeholder="เลือก หรือสามารถพิมพ์เพื่อค้นหาเขต"
           showSearch
           optionFilterProp="children"
           filterOption={(input, option) =>
@@ -100,7 +164,7 @@ const Step3LocationWork: React.FC = () => {
 
       <Form.Item label="จังหวัดที่ทำงาน" name="workProvince">
         <Select
-          placeholder="เลือกจังหวัด"
+          placeholder="เลือก หรือสามารถพิมพ์เพื่อค้นหาจังหวัด"
           showSearch
           optionFilterProp="children"
           filterOption={(input, option) =>
@@ -117,7 +181,7 @@ const Step3LocationWork: React.FC = () => {
 
       <Form.Item label="เขตที่ทำงาน" name="workDistrict">
         <Select
-          placeholder="เลือกเขต"
+          placeholder="เลือก หรือสามารถพิมพ์เพื่อค้นหาเขต"
           showSearch
           optionFilterProp="children"
           filterOption={(input, option) =>
@@ -133,31 +197,39 @@ const Step3LocationWork: React.FC = () => {
       </Form.Item>
 
       <Form.Item label="บริษัท" name="company">
-        <Input placeholder="กรอกชื่อบริษัท" />
+        <Input placeholder="พิมพ์ชื่อบริษัท" />
       </Form.Item>
 
       <Form.Item label="ตำแหน่ง" name="position">
-        <Input placeholder="กรอกตำแหน่งงาน" />
+        <Input placeholder="พิมพ์ตำแหน่งงาน" />
       </Form.Item>
 
       <Form.Item label="อาชีพ" name="occupation">
-        <Select placeholder="เลือกอาชีพ">
-          {occupations.map(occupation => (
-            <Option key={occupation} value={occupation}>
-              {occupation}
-            </Option>
-          ))}
-        </Select>
+        <Form.Item noStyle shouldUpdate>
+          {({ getFieldValue, setFieldsValue }) => (
+            <ClickableList
+              title="เลือกอาชีพ"
+              options={occupations}
+              value={getFieldValue('occupation')}
+              onChange={(value) => setFieldsValue({ occupation: value })}
+              placeholder="เลือกได้ 1 รายการ"
+            />
+          )}
+        </Form.Item>
       </Form.Item>
 
       <Form.Item label="รายได้ต่อเดือน" name="monthlyIncome">
-        <Select placeholder="เลือกช่วงรายได้">
-          {incomeRanges.map(income => (
-            <Option key={income} value={income}>
-              {income}
-            </Option>
-          ))}
-        </Select>
+        <Form.Item noStyle shouldUpdate>
+          {({ getFieldValue, setFieldsValue }) => (
+            <ClickableList
+              title="เลือกช่วงรายได้"
+              options={incomeRanges}
+              value={getFieldValue('monthlyIncome')}
+              onChange={(value) => setFieldsValue({ monthlyIncome: value })}
+              placeholder="เลือกได้ 1 รายการ"
+            />
+          )}
+        </Form.Item>
       </Form.Item>
     </div>
   );

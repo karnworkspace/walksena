@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Spin, Alert, Card, Tag, Typography, Row, Col, Button, Space } from 'antd';
-import { UserOutlined, PhoneOutlined, MailOutlined, EditOutlined, EyeOutlined } from '@ant-design/icons';
+import { Table, Spin, Alert, Card, Tag, Typography, Row, Col, Button, Modal, Descriptions } from 'antd';
+import { UserOutlined, PhoneOutlined, MailOutlined, EditOutlined } from '@ant-design/icons';
 import axios from 'axios';
 
 const { Text } = Typography;
@@ -29,12 +29,41 @@ const WalkInList: React.FC<WalkInListProps> = ({ onEdit, onView }) => {
   const [data, setData] = useState<WalkInData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [pageSize, setPageSize] = useState<number>(20);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [aiVisible, setAiVisible] = useState(false);
+  const [aiSummary, setAiSummary] = useState<{ ai1?: string; ai2?: string; ai3?: string; ai4?: string }>({});
+
+  // Helper: robustly pick AI1-AI4 from a record (tolerate spaces/case)
+  const pickAI = (obj: any, target: string) => {
+    if (!obj) return undefined;
+    const wanted = target.toUpperCase();
+    for (const key of Object.keys(obj)) {
+      const norm = String(key).replace(/\s+/g, '').toUpperCase();
+      if (norm === wanted) return (obj as any)[key];
+    }
+    return undefined;
+  };
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const response = await axios.get('http://localhost:3001/api/walkin/entries');
-        setData(response.data.data || []);
+        const raw: WalkInData[] = response.data.data || [];
+
+        const getNo = (r: WalkInData) => {
+          const n = parseInt(
+            String(
+              r['No.'] || r['No'] || (r as any)['NO'] || (r as any)['no'] || (r as any)['Running Number'] || (r as any)['RowId'] || 0
+            ),
+            10
+          );
+          return isNaN(n) ? 0 : n;
+        };
+
+        // Sort latest first by running number (desc)
+        const sorted = [...raw].sort((a, b) => getNo(b) - getNo(a));
+        setData(sorted);
       } catch (err) {
         setError('Failed to fetch data');
       }
@@ -142,23 +171,15 @@ const WalkInList: React.FC<WalkInListProps> = ({ onEdit, onView }) => {
             </Col>
             
             <Col span={24} style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #f0f0f0' }}>
-              <Space size="small" style={{ width: '100%', justifyContent: 'center' }}>
-                <Button 
-                  type="primary" 
-                  icon={<EditOutlined />} 
-                  size="small"
-                  onClick={() => onEdit?.(record)}
-                >
-                  Edit
-                </Button>
-                <Button 
-                  icon={<EyeOutlined />} 
-                  size="small"
-                  onClick={() => onView?.(record)}
-                >
-                  View
-                </Button>
-              </Space>
+              <Button 
+                type="primary" 
+                icon={<EditOutlined />} 
+                size="middle"
+                block
+                onClick={() => onEdit?.(record)}
+              >
+                Edit Record
+              </Button>
             </Col>
           </Row>
         </Card>
@@ -166,88 +187,114 @@ const WalkInList: React.FC<WalkInListProps> = ({ onEdit, onView }) => {
     </div>
   );
 
-  // Desktop Table View
+  // Desktop Table View - Responsive without horizontal scroll
   const DesktopTableView = () => {
     const columns = [
       {
         title: 'No.',
         dataIndex: 'No.',
         key: 'no',
-        width: 60,
-        fixed: 'left' as const,
-      },
-      {
-        title: 'Name',
-        dataIndex: 'ชื่อ นามสกุล',
-        key: 'name',
-        width: 200,
-        fixed: 'left' as const,
-      },
-      {
-        title: 'Phone',
-        dataIndex: 'หมายเลขโทรศัพท์',
-        key: 'phone',
-        width: 150,
-      },
-      {
-        title: 'Grade',
-        dataIndex: 'Grade',
-        key: 'grade',
-        width: 100,
-        render: (grade: string) => (
-          <Tag color={getGradeColor(grade)}>{grade}</Tag>
+        width: '60px',
+        render: (no: string) => (
+          <Text strong style={{ color: '#1890ff' }}>#{no}</Text>
         ),
       },
       {
-        title: 'Sales',
-        dataIndex: 'Sales Queue',
-        key: 'sales',
-        width: 100,
+        title: 'Customer Info',
+        key: 'customerInfo',
+        render: (_: any, record: WalkInData) => (
+          <div>
+            <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>
+              <UserOutlined style={{ marginRight: '6px', color: '#1890ff' }} />
+              {record['ชื่อ นามสกุล'] || 'N/A'}
+            </div>
+            <div style={{ fontSize: '12px', color: '#666' }}>
+              <PhoneOutlined style={{ marginRight: '6px' }} />
+              {record['หมายเลขโทรศัพท์'] || 'N/A'}
+            </div>
+            {record['Email'] && (
+              <div style={{ fontSize: '12px', color: '#666' }}>
+                <MailOutlined style={{ marginRight: '6px' }} />
+                {record['Email']}
+              </div>
+            )}
+          </div>
+        ),
       },
       {
         title: 'Visit Date',
         dataIndex: 'DATE ( เข้าชมโครงการ )',
         key: 'visitDate',
-        width: 120,
+        width: '110px',
+        render: (date: string) => (
+          <Text style={{ fontSize: '13px' }}>{date || 'N/A'}</Text>
+        ),
       },
       {
         title: 'Room Type',
         dataIndex: 'รูปแบบห้องที่ต้องการ ',
         key: 'roomType',
-        width: 150,
+        render: (roomType: string) => (
+          <Text style={{ fontSize: '13px' }}>{roomType || 'N/A'}</Text>
+        ),
+      },
+      {
+        title: 'AI',
+        key: 'ai',
+        width: '70px',
+        render: (_: any, record: WalkInData) => (
+          <Button
+            type="primary"
+            shape="round"
+            size="small"
+            onClick={() => {
+              const ai1 = pickAI(record, 'AI1');
+              const ai2 = pickAI(record, 'AI2');
+              const ai3 = pickAI(record, 'AI3');
+              const ai4 = pickAI(record, 'AI4');
+              setAiSummary({ ai1, ai2, ai3, ai4 });
+              setAiVisible(true);
+            }}
+          >
+            AI
+          </Button>
+        ),
       },
       {
         title: 'Status',
-        dataIndex: 'Status ล่าสุด ( เหตุผลที่ยังไม่ติดสินใจ )',
-        key: 'status',
-        width: 200,
-        render: (status: string) => (
-          <Tag color={getStatusColor(status)}>{status || 'N/A'}</Tag>
+        key: 'statusInfo', 
+        render: (_: any, record: WalkInData) => (
+          <div>
+            <div style={{ marginBottom: '4px' }}>
+              <Tag color={getGradeColor(record['Grade'] || '')}>
+                {record['Grade'] || 'N/A'}
+              </Tag>
+            </div>
+            <div>
+              <Tag 
+                color={getStatusColor(record['Status ล่าสุด ( เหตุผลที่ยังไม่ติดสินใจ )'] || '')}
+                style={{ fontSize: '11px' }}
+              >
+                {record['Status ล่าสุด ( เหตุผลที่ยังไม่ติดสินใจ )'] || 'N/A'}
+              </Tag>
+            </div>
+          </div>
         ),
       },
       {
         title: 'Actions',
         key: 'actions',
-        width: 120,
-        fixed: 'right' as const,
+        width: '100px',
         render: (_: any, record: WalkInData) => (
-          <Space size="small">
-            <Button 
-              type="primary" 
-              icon={<EditOutlined />} 
-              size="small"
-              onClick={() => onEdit?.(record)}
-            >
-              Edit
-            </Button>
-            <Button 
-              icon={<EyeOutlined />} 
-              size="small"
-              onClick={() => onView?.(record)}
-            >
-              View
-            </Button>
-          </Space>
+          <Button 
+            type="primary" 
+            icon={<EditOutlined />} 
+            size="middle"
+            onClick={() => onEdit?.(record)}
+            block
+          >
+            Edit
+          </Button>
         ),
       },
     ];
@@ -256,29 +303,174 @@ const WalkInList: React.FC<WalkInListProps> = ({ onEdit, onView }) => {
       <Table
         dataSource={data}
         columns={columns}
-        rowKey={record => record['No.'] || Math.random().toString()}
-        scroll={{ x: 1320, y: 600 }}
+        rowKey={record => record['No.'] || (record as any)['No'] || Math.random().toString()}
+        scroll={{ y: 600 }}
+        size="middle"
+        pagination={{
+          current: currentPage,
+          pageSize,
+          showSizeChanger: true,
+          pageSizeOptions: ['10', '20', '50', '100'],
+          showQuickJumper: true,
+          showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} items`,
+          onChange: (page, size) => {
+            setCurrentPage(page);
+            if (size && size !== pageSize) setPageSize(size);
+          },
+        }}
+        className="responsive-table"
+      />
+    );
+  };
+
+  // Compact Table View for tablets
+  const TabletTableView = () => {
+    const columns = [
+      {
+        title: 'Customer',
+        key: 'customer',
+        render: (_: any, record: WalkInData) => (
+          <div>
+            <div style={{ fontWeight: 'bold', fontSize: '14px', marginBottom: '2px' }}>
+              #{record['No.']} {record['ชื่อ นามสกุล'] || 'N/A'}
+            </div>
+            <div style={{ fontSize: '12px', color: '#666' }}>
+              📞 {record['หมายเลขโทรศัพท์'] || 'N/A'}
+            </div>
+            <div style={{ fontSize: '11px', color: '#999', marginTop: '2px' }}>
+              📅 {record['DATE ( เข้าชมโครงการ )'] || 'N/A'}
+            </div>
+          </div>
+        ),
+      },
+      {
+        title: 'Details',
+        key: 'details',
+        render: (_: any, record: WalkInData) => (
+          <div>
+            <div style={{ marginBottom: '4px' }}>
+              <Tag color={getGradeColor(record['Grade'] || '')}>
+                {record['Grade'] || 'N/A'}
+              </Tag>
+            </div>
+            <div style={{ fontSize: '11px', marginBottom: '2px' }}>
+              🏠 {record['รูปแบบห้องที่ต้องการ '] || 'N/A'}
+            </div>
+            <div>
+              <Tag 
+                color={getStatusColor(record['Status ล่าสุด ( เหตุผลที่ยังไม่ติดสินใจ )'] || '')}
+                style={{ fontSize: '10px' }}
+              >
+                {record['Status ล่าสุด ( เหตุผลที่ยังไม่ติดสินใจ )'] || 'N/A'}
+              </Tag>
+            </div>
+          </div>
+        ),
+      },
+      {
+        title: 'AI',
+        key: 'ai',
+        width: '60px',
+        render: (_: any, record: WalkInData) => (
+          <Button
+            type="primary"
+            shape="round"
+            size="small"
+            onClick={() => {
+              const ai1 = pickAI(record, 'AI1');
+              const ai2 = pickAI(record, 'AI2');
+              const ai3 = pickAI(record, 'AI3');
+              const ai4 = pickAI(record, 'AI4');
+              setAiSummary({ ai1, ai2, ai3, ai4 });
+              setAiVisible(true);
+            }}
+          >
+            AI
+          </Button>
+        ),
+      },
+      {
+        title: 'Actions',
+        key: 'actions',
+        width: '80px',
+        render: (_: any, record: WalkInData) => (
+          <Button 
+            type="primary" 
+            icon={<EditOutlined />} 
+            size="small"
+            block
+            onClick={() => onEdit?.(record)}
+          >
+            Edit
+          </Button>
+        ),
+      },
+    ];
+
+    return (
+      <Table
+        dataSource={data}
+        columns={columns}
+        rowKey={record => record['No.'] || (record as any)['No'] || Math.random().toString()}
+        scroll={{ y: 500 }}
         size="small"
         pagination={{
-          pageSize: 20,
+          current: currentPage,
+          pageSize,
           showSizeChanger: true,
+          pageSizeOptions: ['10', '20', '50', '100'],
           showQuickJumper: true,
-          showTotal: (total, range) => 
-            `${range[0]}-${range[1]} of ${total} items`,
+          showTotal: (total, range) => `${range[0]}-${range[1]} of ${total}`,
+          onChange: (page, size) => {
+            setCurrentPage(page);
+            if (size && size !== pageSize) setPageSize(size);
+          },
         }}
       />
     );
   };
 
-  // Check if mobile view
-  const isMobile = window.innerWidth < 768;
+  // Responsive view selection
+  const getResponsiveView = () => {
+    const width = window.innerWidth;
+    if (width < 576) return <MobileCardView />;      // Mobile
+    if (width < 992) return <TabletTableView />;     // Tablet  
+    return <DesktopTableView />;                     // Desktop
+  };
 
   return (
     <Card 
-      title={`Walk-in Records (${data.length} entries)`}
+      title={
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span>Walk-in Records ({data.length} entries)</span>
+          <div style={{ fontSize: '12px', color: '#666', fontWeight: 'normal' }}>
+            {window.innerWidth < 576 ? '📱 Mobile View' : 
+             window.innerWidth < 992 ? '💻 Tablet View' : 
+             '🖥️ Desktop View'}
+          </div>
+        </div>
+      }
       className="form-card"
     >
-      {isMobile ? <MobileCardView /> : <DesktopTableView />}
+      {getResponsiveView()}
+
+      <Modal
+        title="ผลการสรุปจาก AI"
+        open={aiVisible}
+        onCancel={() => setAiVisible(false)}
+        footer={[
+          <Button key="close" type="primary" onClick={() => setAiVisible(false)}>ปิด</Button>
+        ]}
+      >
+        <Descriptions column={1} size="small" bordered>
+          <Descriptions.Item label="สถานะ">{aiSummary.ai1 || '—'}</Descriptions.Item>
+          <Descriptions.Item label="วัตถุประสงค์">{aiSummary.ai2 || '—'}</Descriptions.Item>
+          <Descriptions.Item label="สาเหตุ">{aiSummary.ai3 || '—'}</Descriptions.Item>
+          <Descriptions.Item label="รายละเอียด">
+            <div style={{ whiteSpace: 'pre-wrap' }}>{aiSummary.ai4 || '—'}</div>
+          </Descriptions.Item>
+        </Descriptions>
+      </Modal>
     </Card>
   );
 };

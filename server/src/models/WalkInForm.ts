@@ -26,7 +26,7 @@ export interface WalkInFormData {
   company?: string;                     // Column U
   position?: string;                  // Column V
   occupation?: string;                // Column W
-  monthlyIncome?: number;               // Column X
+  monthlyIncome?: string | number;      // Column X (range string or numeric)
   
   roomType?: string;                    // Column Y
   budget?: number;                      // Column Z

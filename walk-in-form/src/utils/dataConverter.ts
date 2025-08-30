@@ -25,6 +25,7 @@ interface GoogleSheetsData {
   'ตำแหน่ง'?: string;
   'อาชีพ'?: string;
   'รายได้ต่อเดือน '?: string;
+  'รายได้ต่อเดือน'?: string;
   'รูปแบบห้องที่ต้องการ '?: string;
   'งบประมาณในการซื้อ'?: string;
   'ระยะเวลาในการตัดสินใจ'?: string;
@@ -37,6 +38,8 @@ interface GoogleSheetsData {
   'โปรโมชั่นที่สนใจ'?: string;
   'โครงการเปรียบเทียบ'?: string;
   'รายละเอียดลูกค้า'?: string;
+  'รายละเอียดลูกค้า(AI)'?: string;
+  'รายละเอียดลูกค้า (AI)'?: string;
   'สรุปเหตุผลลูกค้าไม่จอง'?: string;
   'เหตุผลไม่จอง'?: string;
   'วันที่ '?: string;
@@ -59,7 +62,7 @@ interface FormData {
   phoneNumber?: string;
   email?: string;
   lineId?: string;
-  age?: number | null;
+  age?: string | number | null;
 
   // Step 3
   residenceDistrict?: string;
@@ -69,7 +72,7 @@ interface FormData {
   company?: string;
   position?: string;
   occupation?: string;
-  monthlyIncome?: number | null;
+  monthlyIncome?: string | number | null;
 
   // Step 4
   roomType?: string;
@@ -116,7 +119,12 @@ export function convertGoogleSheetsToFormData(sheetsData: GoogleSheetsData): For
         if (parts.length === 3) {
           const day = parseInt(parts[0]);
           const month = parseInt(parts[1]);
-          const year = parseInt(parts[2]);
+          let year = parseInt(parts[2]);
+
+          // Convert Buddhist Era to Gregorian if necessary
+          if (!isNaN(year) && year > 2400) {
+            year = year - 543;
+          }
           
           // Validate numbers
           if (isNaN(day) || isNaN(month) || isNaN(year)) {
@@ -146,7 +154,7 @@ export function convertGoogleSheetsToFormData(sheetsData: GoogleSheetsData): For
     }
   };
 
-  // Parse age from age range string
+  // Parse age number fallback
   const parseAge = (ageStr?: string): number | undefined => {
     if (!ageStr) return undefined;
     const match = ageStr.match(/(\d+)/);
@@ -159,13 +167,21 @@ export function convertGoogleSheetsToFormData(sheetsData: GoogleSheetsData): For
     return str.split(',').map(item => item.trim()).filter(item => item.length > 0);
   };
 
+  // Helper to read first available value from possible header variants
+  const fromAny = (...keys: (keyof GoogleSheetsData)[]): string | undefined => {
+    for (const k of keys) {
+      const v = sheetsData[k];
+      if (typeof v === 'string' && v.trim() !== '') return v;
+    }
+    return undefined;
+  };
+
   const formData = {
-    no: sheetsData['No.'] ? parseInt(sheetsData['No.']) : undefined,
+    no: sheetsData['No.'] ? parseInt(sheetsData['No.']) : (sheetsData['No'] ? parseInt(sheetsData['No']) : undefined),
     month: sheetsData['Month'],
     salesQueue: sheetsData['Sales Queue'],
-    // Temporarily disable date parsing to avoid errors
-    // visitDate: parseDate(sheetsData['DATE ( เข้าชมโครงการ )']),
-    visitDate: null, // Will be manually set if needed
+    // Parse visit date from sheet (Column I: DATE ( เข้าชมโครงการ ))
+    visitDate: parseDate(sheetsData['DATE ( เข้าชมโครงการ )']) || null,
     leadFromMonth: sheetsData['Lead จากเดือน ( Detail )'],
     mediaOnline: sheetsData['สื่อ Online (แบบสอบถาม)'],
     mediaOffline: sheetsData['สื่อ Offline'],
@@ -177,7 +193,10 @@ export function convertGoogleSheetsToFormData(sheetsData: GoogleSheetsData): For
     phoneNumber: sheetsData['หมายเลขโทรศัพท์'],
     email: sheetsData['Email'],
     lineId: sheetsData['Line ID'],
-    age: parseAge(sheetsData['อายุ ( เลือกอายุ )']),
+    // Age: prefer the original range string if available; fallback to parsed number
+    age: sheetsData['อายุ ( เลือกอายุ )'] && String(sheetsData['อายุ ( เลือกอายุ )']).trim() !== ''
+      ? String(sheetsData['อายุ ( เลือกอายุ )']).trim()
+      : parseAge(sheetsData['อายุ ( เลือกอายุ )']),
     residenceDistrict: sheetsData['เขตที่อยู่ปัจจุบัน'],
     residenceProvince: sheetsData['จังหวัดที่อยู่'],
     workDistrict: sheetsData['เขตที่ทำงาน'],
@@ -185,7 +204,7 @@ export function convertGoogleSheetsToFormData(sheetsData: GoogleSheetsData): For
     company: sheetsData['บริษัทที่ทำงาน'],
     position: sheetsData['ตำแหน่ง'],
     occupation: sheetsData['อาชีพ'],
-    monthlyIncome: null, // Will be handled as string selection in form
+    monthlyIncome: sheetsData['รายได้ต่อเดือน '] || sheetsData['รายได้ต่อเดือน'] || null,
     roomType: sheetsData['รูปแบบห้องที่ต้องการ '],
     budget: null, // Will be handled as string selection in form
     decisionTimeframe: sheetsData['ระยะเวลาในการตัดสินใจ'],
@@ -197,7 +216,7 @@ export function convertGoogleSheetsToFormData(sheetsData: GoogleSheetsData): For
     shoppingMalls: splitToArray(sheetsData['ห้างสรรพสินค้าที่ชอปบ่อยๆ']),
     promotionInterest: splitToArray(sheetsData['โปรโมชั่นที่สนใจ']),
     comparisonProjects: sheetsData['โครงการเปรียบเทียบ'],
-    customerDetails: sheetsData['รายละเอียดลูกค้า'],
+    customerDetails: fromAny('รายละเอียดลูกค้า', 'รายละเอียดลูกค้า(AI)', 'รายละเอียดลูกค้า (AI)'),
     reasonNotBooking: sheetsData['สรุปเหตุผลลูกค้าไม่จอง'],
     reasonNotBookingDetail: sheetsData['เหตุผลไม่จอง'],
     followUpDate: parseDate(sheetsData['วันที่ ']),

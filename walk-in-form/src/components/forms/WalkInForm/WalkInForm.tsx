@@ -1,11 +1,11 @@
 
-import React, { useEffect } from 'react';
-import { Form, Button, Steps, Card } from 'antd';
+import React, { useEffect, useRef, useState } from 'react';
+import { Form, Button, Steps, Divider, Modal, Descriptions } from 'antd';
 import { useSelector, useDispatch } from 'react-redux';
 import axios from 'axios';
 import { RootState, AppDispatch } from '../../../store';
 import { setCurrentStep, updateFormData, clearForm } from '../../../store/slices/walkInFormSlice';
-import { convertFormDatesForAPI } from '../../../utils/dateUtils';
+import { convertFormDatesForAPI, safeParseDate } from '../../../utils/dateUtils';
 import Step1VisitInfo from './steps/Step1VisitInfo';
 import Step2CustomerInfo from './steps/Step2CustomerInfo';
 import Step3LocationWork from './steps/Step3LocationWork';
@@ -15,14 +15,44 @@ import Step5Assessment from './steps/Step5Assessment';
 const { Step } = Steps;
 
 const steps = [
-  { title: 'Visit Information', content: <Step1VisitInfo /> },
-  { title: 'Customer Information', content: <Step2CustomerInfo /> },
-  { title: 'Location & Work', content: <Step3LocationWork /> },
-  { title: 'Preferences & Requirements', content: <Step4Preferences /> },
-  { title: 'Assessment & Follow-up', content: <Step5Assessment /> },
+  { 
+    id: 'step1', 
+    title: 'Visit Information', 
+    content: <Step1VisitInfo />,
+    description: 'วันที่เข้าชม, Sales Queue, ประเภท Walk-in'
+  },
+  { 
+    id: 'step2', 
+    title: 'Customer Information', 
+    content: <Step2CustomerInfo />,
+    description: 'ชื่อ-นามสกุล, เบอร์โทร, อีเมล, Line ID'
+  },
+  { 
+    id: 'step3', 
+    title: 'Location & Work', 
+    content: <Step3LocationWork />,
+    description: 'ที่อยู่อาศัย, ที่ทำงาน, อาชีพ, รายได้'
+  },
+  { 
+    id: 'step4', 
+    title: 'Preferences & Requirements', 
+    content: <Step4Preferences />,
+    description: 'ประเภทห้อง, งบประมาณ, ปัจจัยตัดสินใจ'
+  },
+  { 
+    id: 'step5', 
+    title: 'Assessment & Follow-up', 
+    content: <Step5Assessment />,
+    description: 'Grade, Status, การติดตาม'
+  },
 ];
 
-const WalkInForm: React.FC = () => {
+interface WalkInFormProps {
+  onSubmitted?: () => void;
+  onHome?: () => void;
+}
+
+const WalkInForm: React.FC<WalkInFormProps> = ({ onSubmitted, onHome }) => {
   const dispatch = useDispatch<AppDispatch>();
   const currentStep = useSelector((state: RootState) => state.walkInForm.currentStep);
   const formData = useSelector((state: RootState) => state.walkInForm.formData);
@@ -30,15 +60,25 @@ const WalkInForm: React.FC = () => {
   const isViewMode = useSelector((state: RootState) => state.walkInForm.isViewMode);
   const editingRecordId = useSelector((state: RootState) => state.walkInForm.editingRecordId);
   const [form] = Form.useForm();
+  
+  // Refs for smooth scrolling
+  const sectionRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const [activeSection, setActiveSection] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [aiVisible, setAiVisible] = useState(false);
 
   useEffect(() => {
-    // Don't process dates here - let the form handle them naturally
     const processedFormData: any = { ...formData };
-    
+
+    // Convert visitDate string -> dayjs for DatePicker display
+    if (typeof processedFormData.visitDate === 'string') {
+      const d = safeParseDate(processedFormData.visitDate);
+      processedFormData.visitDate = d || null;
+    }
+
     console.log('Original form data:', formData);
     console.log('Setting form values:', processedFormData);
-    
-    // Set form values directly without date conversion
+
     form.setFieldsValue(processedFormData);
   }, [formData, form]);
 
@@ -75,10 +115,53 @@ const WalkInForm: React.FC = () => {
     }
   };
 
+  // Scroll to section function
+  const scrollToSection = (sectionIndex: number) => {
+    const section = sectionRefs.current[sectionIndex];
+    if (section && containerRef.current) {
+      const containerTop = containerRef.current.offsetTop;
+      const sectionTop = section.offsetTop;
+      const offset = 120; // Account for sticky header
+      
+      window.scrollTo({
+        top: containerTop + sectionTop - offset,
+        behavior: 'smooth'
+      });
+      
+      setActiveSection(sectionIndex);
+      dispatch(setCurrentStep(sectionIndex));
+    }
+  };
+
+  // Handle scroll to update active section
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!containerRef.current) return;
+      
+      const containerTop = containerRef.current.offsetTop;
+      const scrollPos = window.scrollY + 150; // Offset for better detection
+      
+      for (let i = sectionRefs.current.length - 1; i >= 0; i--) {
+        const section = sectionRefs.current[i];
+        if (section && (containerTop + section.offsetTop) <= scrollPos) {
+          if (activeSection !== i) {
+            setActiveSection(i);
+            dispatch(setCurrentStep(i));
+          }
+          break;
+        }
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [activeSection, dispatch]);
+
   const next = () => {
     form.validateFields()
       .then(() => {
-        dispatch(setCurrentStep(currentStep + 1));
+        const nextStep = Math.min(currentStep + 1, steps.length - 1);
+        scrollToSection(nextStep);
       })
       .catch(info => {
         console.log('Validate Failed:', info);
@@ -86,7 +169,8 @@ const WalkInForm: React.FC = () => {
   };
 
   const prev = () => {
-    dispatch(setCurrentStep(currentStep - 1));
+    const prevStep = Math.max(currentStep - 1, 0);
+    scrollToSection(prevStep);
   };
 
   const handleSubmit = (isDraft = false) => {
@@ -111,7 +195,35 @@ const WalkInForm: React.FC = () => {
           const finalData = convertFormDatesForAPI(submissionData);
           console.log('Submitting data:', finalData, 'isDraft:', isDraft);
 
-          const response = await axios.post('http://localhost:3001/api/walkin/submit', finalData);
+          // Include running number when editing (robust extraction)
+          if (isEditMode) {
+            const candidateNoValues = [
+              (finalData as any).no,
+              (formData as any)?.no,
+              editingRecordId,
+              (finalData as any).runningNumber,
+              (formData as any)?.runningNumber,
+            ].filter(Boolean);
+
+            let parsedNo: number | undefined;
+            for (const cand of candidateNoValues) {
+              const n = parseInt(String(cand), 10);
+              if (!isNaN(n)) { parsedNo = n; break; }
+            }
+
+            if (parsedNo !== undefined) {
+              (finalData as any).no = parsedNo;
+            } else {
+              alert('ไม่พบหมายเลขแถว (No.) ของรายการที่กำลังแก้ไข กรุณาเปิดแก้ไขจากหน้ารายการอีกครั้ง');
+              return;
+            }
+          }
+
+          const endpoint = isEditMode 
+            ? 'http://localhost:3001/api/walkin/update' 
+            : 'http://localhost:3001/api/walkin/submit';
+
+          const response = await axios.post(endpoint, finalData);
 
           if (response.data.success) {
             const message = isDraft ? 
@@ -122,6 +234,10 @@ const WalkInForm: React.FC = () => {
             if (!isDraft) {
               dispatch(clearForm());
               form.resetFields();
+              // After successful non-draft submission, navigate back if provided
+              if (typeof onSubmitted === 'function') {
+                onSubmitted();
+              }
             }
           } else {
             alert(`${isDraft ? 'Draft save' : (isEditMode ? 'Update' : 'Submission')} failed: ${response.data.message}`);
@@ -146,94 +262,219 @@ const WalkInForm: React.FC = () => {
   };
 
   return (
-    <Card 
-      title={
-        <div>
-          <div style={{ color: isEditMode ? '#ff7a00' : isViewMode ? '#52c41a' : '#1890ff', fontWeight: 'bold' }}>
-            {isEditMode ? `🔧 Edit Record #${editingRecordId}` : 
-             isViewMode ? `👁️ View Record #${editingRecordId}` : 
-             '📝 New Walk-in Form'}
+    <div className="single-page-form">
+      {/* Sticky Header */}
+      <div className="form-header" style={{
+        position: 'sticky',
+        top: 0,
+        zIndex: 1000,
+        background: '#fff',
+        borderBottom: '1px solid #f0f0f0',
+        padding: '16px 24px',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+      }}>
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          marginBottom: '16px'
+        }}>
+          <div>
+            <div style={{ color: isEditMode ? '#ff7a00' : isViewMode ? '#52c41a' : '#1890ff', fontWeight: 'bold', fontSize: '20px' }}>
+              {isEditMode ? `🔧 Edit Record #${editingRecordId}` : 
+               isViewMode ? `👁️ View Record #${editingRecordId}` : 
+               '📝 New Walk-in Form'}
+            </div>
+            <div style={{ fontSize: '14px', color: '#666', marginTop: '4px' }}>
+              {steps[currentStep].description}
+            </div>
           </div>
-          <div style={{ fontSize: '14px', color: '#666', fontWeight: 'normal' }}>
-            Step {currentStep + 1} of {steps.length}: {steps[currentStep].title}
+          <div style={{ display: 'flex', gap: '12px' }}>
+            {(isEditMode || isViewMode) && (
+              <Button 
+                onClick={() => {
+                  dispatch(clearForm());
+                  form.resetFields();
+                }}
+              >
+                {isViewMode ? '← Back to List' : '✕ Cancel Edit'}
+              </Button>
+            )}
+            {isEditMode && (
+              <Button 
+                onClick={() => setAiVisible(true)}
+                style={{ background: '#f6ffed', borderColor: '#b7eb8f' }}
+              >
+                ผลการสรุปจาก AI
+              </Button>
+            )}
+            {!isViewMode && (
+              <Button 
+                onClick={handleSaveDraft}
+                icon="💾"
+              >
+                Save Draft
+              </Button>
+            )}
+            {!isViewMode && (
+              <Button 
+                type="primary" 
+                onClick={() => handleSubmit(false)}
+                icon="✓"
+              >
+                {isEditMode ? 'Update Record' : 'Submit Form'}
+              </Button>
+            )}
           </div>
         </div>
-      } 
-      className="form-card"
-    >
-      <Steps 
-        current={currentStep} 
-        size="small" 
-        responsive
-        onChange={isViewMode ? (step) => dispatch(setCurrentStep(step)) : undefined}
-        style={{ cursor: isViewMode ? 'pointer' : 'default' }}
-      >
-        {steps.map((item, index) => (
-          <Step 
-            key={item.title} 
-            title={`${index + 1}`} 
-            description={window.innerWidth > 768 ? item.title : undefined}
-            style={{ 
-              cursor: isViewMode ? 'pointer' : 'default'
-            }}
-          />
-        ))}
-      </Steps>
-      <div className="steps-content">
+        
+        {/* Progress Steps */}
+        <Steps 
+          current={activeSection} 
+          size="small" 
+          responsive
+          onChange={(step) => scrollToSection(step)}
+          style={{ cursor: 'pointer' }}
+        >
+          {steps.map((item, index) => (
+            <Step 
+              key={item.id} 
+              title={`${index + 1}`} 
+              description={window.innerWidth > 768 ? item.title : undefined}
+              style={{ cursor: 'pointer' }}
+            />
+          ))}
+        </Steps>
+      </div>
+
+      {/* Form Content */}
+      <div ref={containerRef} className="form-content" style={{ padding: '24px' }}>
         <Form 
           form={form} 
           layout="vertical" 
           autoComplete="off" 
           onValuesChange={handleValuesChange} 
-          initialValues={formData}
           size="large"
           disabled={isViewMode}
         >
-          {steps[currentStep].content}
-        </Form>
-      </div>
-      <div className="steps-action">
-        <div>
-          {(isEditMode || isViewMode) && (
-            <Button 
-              size="large" 
-              onClick={() => {
-                dispatch(clearForm());
-                form.resetFields();
+          {steps.map((step, index) => (
+            <div
+              key={step.id}
+              ref={(el) => { sectionRefs.current[index] = el; }}
+              className="form-section"
+              style={{
+                marginBottom: '48px',
+                padding: '24px',
+                background: '#fff',
+                borderRadius: '8px',
+                border: activeSection === index ? '2px solid #1890ff' : '1px solid #f0f0f0',
+                boxShadow: activeSection === index ? '0 4px 16px rgba(24, 144, 255, 0.15)' : '0 2px 8px rgba(0,0,0,0.06)',
+                transition: 'all 0.3s ease'
               }}
             >
-              {isViewMode ? '← Back to List' : '✕ Cancel Edit'}
-            </Button>
-          )}
-        </div>
-        <div style={{ display: 'flex', gap: '12px' }}>
-          {currentStep > 0 && !isViewMode && (
-            <Button size="large" onClick={prev}>
-              ← Previous
-            </Button>
-          )}
-          {currentStep < steps.length - 1 && (
-            <Button type="primary" size="large" onClick={isViewMode ? next : next}>
-              {isViewMode ? 'Next →' : 'Next →'}
-            </Button>
-          )}
-          {!isViewMode && (
-            <Button 
-              size="large" 
-              onClick={handleSaveDraft}
-              style={{ marginRight: '8px' }}
-            >
-              💾 Save Draft
-            </Button>
-          )}
-          {currentStep === steps.length - 1 && !isViewMode && (
-            <Button type="primary" size="large" onClick={() => handleSubmit(false)}>
-              {isEditMode ? '💾 Update Record' : '✓ Submit Form'}
-            </Button>
-          )}
-        </div>
+              <div style={{
+                marginBottom: '24px',
+                paddingBottom: '16px',
+                borderBottom: '1px solid #f0f0f0'
+              }}>
+                <h3 style={{
+                  margin: 0,
+                  color: activeSection === index ? '#1890ff' : '#262626',
+                  fontSize: '18px',
+                  fontWeight: 'bold'
+                }}>
+                  {index + 1}. {step.title}
+                </h3>
+                <p style={{
+                  margin: '8px 0 0 0',
+                  color: '#666',
+                  fontSize: '14px'
+                }}>
+                  {step.description}
+                </p>
+              </div>
+              
+              {step.content}
+              
+              {index < steps.length - 1 && (
+                <Divider style={{ margin: '32px 0 0 0' }} />
+              )}
+            </div>
+          ))}
+        </Form>
       </div>
-    </Card>
+
+      {/* Floating Navigation (Optional) */}
+      <div className="floating-nav" style={{
+        position: 'fixed',
+        bottom: '24px',
+        right: '24px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '8px',
+        zIndex: 999
+      }}>
+        <Button 
+          shape="round"
+          onClick={() => {
+            if (typeof onHome === 'function') onHome();
+          }}
+          style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}
+        >
+          ⌂ Home
+        </Button>
+        {activeSection > 0 && (
+          <Button 
+            shape="round" 
+            onClick={prev}
+            style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}
+          >
+            ↑ Previous
+          </Button>
+        )}
+        {activeSection < steps.length - 1 && (
+          <Button 
+            type="primary" 
+            shape="round" 
+            onClick={next}
+            style={{ boxShadow: '0 4px 12px rgba(24, 144, 255, 0.3)' }}
+          >
+            Next ↓
+          </Button>
+        )}
+      </div>
+
+      {/* AI Summary Modal */}
+      <Modal
+        title="ผลการสรุปจาก AI"
+        open={aiVisible}
+        onCancel={() => setAiVisible(false)}
+        footer={[
+          <Button key="close" type="primary" onClick={() => setAiVisible(false)}>ปิด</Button>
+        ]}
+      >
+        <Form.Item noStyle shouldUpdate>
+          {() => {
+            // Use "true" to get all values, including unregistered ones (aiStatus/aiObjective/aiCause/aiDetail)
+            const values = form.getFieldsValue(true);
+            const aiStatus = values.aiStatus || '—';
+            const aiObjective = values.aiObjective || '—';
+            const aiCause = values.aiCause || '—';
+            const aiDetail = values.aiDetail || values.customerDetails || '—';
+            return (
+              <Descriptions column={1} size="small" bordered>
+                <Descriptions.Item label="สถานะ">{aiStatus}</Descriptions.Item>
+                <Descriptions.Item label="วัตถุประสงค์">{aiObjective}</Descriptions.Item>
+                <Descriptions.Item label="สาเหตุ">{aiCause}</Descriptions.Item>
+                <Descriptions.Item label="รายละเอียด">
+                  <div style={{ whiteSpace: 'pre-wrap' }}>{aiDetail}</div>
+                </Descriptions.Item>
+              </Descriptions>
+            );
+          }}
+        </Form.Item>
+      </Modal>
+    </div>
   );
 };
 

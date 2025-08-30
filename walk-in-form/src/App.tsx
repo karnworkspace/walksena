@@ -3,7 +3,7 @@ import { ConfigProvider, Button, Typography } from 'antd';
 import { useDispatch } from 'react-redux';
 import WalkInForm from './components/forms/WalkInForm/WalkInForm';
 import WalkInList from './components/list/WalkInList';
-import { setEditMode, setViewMode } from './store/slices/walkInFormSlice';
+import { setEditMode, setViewMode, clearForm } from './store/slices/walkInFormSlice';
 import { convertGoogleSheetsToFormData } from './utils/dataConverter';
 import { AppDispatch } from './store';
 import senaLogo from './assets/sena logo.png';
@@ -15,6 +15,17 @@ const { Title } = Typography;
 const App: React.FC = () => {
   const [view, setView] = useState('form');
   const dispatch = useDispatch<AppDispatch>();
+
+  // Helper to pick AI fields like AI1-AI4 robustly (tolerate spaces/case)
+  const pickAI = (obj: any, target: string) => {
+    if (!obj) return undefined;
+    const wanted = target.toUpperCase();
+    for (const key of Object.keys(obj)) {
+      const norm = String(key).replace(/\s+/g, '').toUpperCase();
+      if (norm === wanted) return (obj as any)[key];
+    }
+    return undefined;
+  };
 
   return (
     <ConfigProvider
@@ -36,17 +47,29 @@ const App: React.FC = () => {
                 {view === 'form' ? 'Walk-in Form 2025' : 'Walk-in Records'}
               </Title>
             </div>
-            <Button 
-              type="primary" 
-              size="large" 
-              className="view-toggle-btn"
-              onClick={() => setView(view === 'form' ? 'list' : 'form')}
-            >
-              {view === 'form' ? '📋 View List' : '📝 View Form'}
-            </Button>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <Button 
+                type={view === 'list' ? 'primary' : 'default'} 
+                size="large" 
+                onClick={() => setView('list')}
+              >
+                📋 View List
+              </Button>
+              <Button 
+                type={view === 'form' ? 'primary' : 'default'} 
+                size="large" 
+                onClick={() => {
+                  // clear any edit/view state and start a fresh form
+                  dispatch(clearForm());
+                  setView('form');
+                }}
+              >
+                📝 Create New Customer
+              </Button>
+            </div>
           </div>
           {view === 'form' ? (
-            <WalkInForm />
+            <WalkInForm onSubmitted={() => setView('list')} onHome={() => setView('list')} />
           ) : (
             <WalkInList 
               onEdit={(record) => {
@@ -100,10 +123,40 @@ const App: React.FC = () => {
                   
                   console.log('Clean form data:', cleanFormData);
                   
+                  // Derive running number (robust across header variants)
+                  const runningNo =
+                    String(
+                      record['No.'] ||
+                      (formData as any).no ||
+                      record['No'] ||
+                      record['NO'] ||
+                      record['no'] ||
+                      record['Running Number'] ||
+                      record['RunningNo'] ||
+                      ''
+                    ).trim();
+
+                  // Extract optional AI summary fields from the row (best-effort mapping)
+                  const aiStatus = pickAI(record, 'AI1');      // สถานะ
+                  const aiObjective = pickAI(record, 'AI2');   // วัตถุประสงค์
+                  const aiCause = pickAI(record, 'AI3');       // สาเหตุ
+                  const aiDetail = pickAI(record, 'AI4');      // รายละเอียด
+
+                  if (aiStatus) (cleanFormData as any).aiStatus = aiStatus;
+                  if (aiObjective) (cleanFormData as any).aiObjective = aiObjective;
+                  if (aiCause) (cleanFormData as any).aiCause = aiCause;
+                  if (aiDetail) (cleanFormData as any).aiDetail = aiDetail;
+
+                  // Attach running number into form data as well
+                  const parsedNo = parseInt(runningNo, 10);
+                  if (!isNaN(parsedNo)) {
+                    (cleanFormData as any).no = parsedNo;
+                  }
+
                   // Set edit mode with the converted data
                   dispatch(setEditMode({
                     isEdit: true,
-                    recordId: record['No.'] || undefined,
+                    recordId: runningNo || undefined,
                     formData: cleanFormData
                   }));
                   
@@ -160,9 +213,38 @@ const App: React.FC = () => {
                   
                   console.log('Clean form data for view:', cleanFormData);
                   
+                  // Derive running number (robust across header variants)
+                  const runningNo =
+                    String(
+                      record['No.'] ||
+                      (formData as any).no ||
+                      record['No'] ||
+                      record['NO'] ||
+                      record['no'] ||
+                      record['Running Number'] ||
+                      record['RunningNo'] ||
+                      ''
+                    ).trim();
+
+                  // Extract optional AI summary fields from the row (best-effort mapping)
+                  const aiStatus = pickAI(record, 'AI1');
+                  const aiObjective = pickAI(record, 'AI2');
+                  const aiCause = pickAI(record, 'AI3');
+                  const aiDetail = pickAI(record, 'AI4');
+
+                  if (aiStatus) (cleanFormData as any).aiStatus = aiStatus;
+                  if (aiObjective) (cleanFormData as any).aiObjective = aiObjective;
+                  if (aiCause) (cleanFormData as any).aiCause = aiCause;
+                  if (aiDetail) (cleanFormData as any).aiDetail = aiDetail;
+
+                  const parsedNo = parseInt(runningNo, 10);
+                  if (!isNaN(parsedNo)) {
+                    (cleanFormData as any).no = parsedNo;
+                  }
+
                   // Set view mode with the converted data
                   dispatch(setViewMode({
-                    recordId: record['No.'] || undefined,
+                    recordId: runningNo || undefined,
                     formData: cleanFormData
                   }));
                   

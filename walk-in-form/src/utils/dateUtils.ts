@@ -50,9 +50,12 @@ export function convertFormDatesForAPI(formValues: any): any {
     converted.visitDate = formatDateForAPI(converted.visitDate);
   }
   
-  // Handle any other date fields as needed
-  if (converted.followUpDate) {
-    converted.followUpDate = formatDateForAPI(converted.followUpDate);
+  // Handle followUps array (date inside objects)
+  if (Array.isArray(converted.followUps)) {
+    converted.followUps = converted.followUps.map((fu: any) => ({
+      ...fu,
+      date: formatDateForAPI(fu?.date) || undefined,
+    }));
   }
   
   return converted;

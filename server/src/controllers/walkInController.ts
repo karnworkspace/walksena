@@ -99,6 +99,46 @@ export const submitWalkInForm = async (req: Request, res: Response) => {
 };
 
 /**
+ * Update existing walk-in form data by running number (Column A)
+ */
+export const updateWalkInForm = async (req: Request, res: Response) => {
+  try {
+    console.log('🛠️  Updating walk-in form');
+    console.log('Request body:', JSON.stringify(req.body, null, 2));
+
+    const formData: WalkInFormData = req.body;
+    const runningNumber = Number(formData.no || req.body.runningNumber || req.body.recordId);
+
+    if (!runningNumber || Number.isNaN(runningNumber)) {
+      return res.status(400).json({ success: false, error: 'Missing running number (no)' });
+    }
+
+    // Normalize visit date
+    const enrichedData: WalkInFormData = {
+      ...formData,
+      month: formData.visitDate ? new Date(formData.visitDate).toLocaleDateString('en-US', { month: 'long' }) : undefined,
+      visitDate: formData.visitDate ? new Date(formData.visitDate).toISOString() : undefined,
+    };
+
+    // Ensure monthlyIncome is a string (range) if sent as object/array
+    if (enrichedData && typeof (enrichedData as any).monthlyIncome === 'object') {
+      (enrichedData as any).monthlyIncome = String((enrichedData as any).monthlyIncome);
+    }
+
+    const result = await googleSheetsService.updateByRunningNumber(runningNumber, enrichedData);
+
+    if (result.success) {
+      return res.json({ success: true, message: 'Row updated', rowNumber: result.rowNumber });
+    }
+
+    return res.status(500).json({ success: false, error: result.error || 'Failed to update row' });
+  } catch (error) {
+    console.error('❌ Update controller error:', error);
+    return res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+};
+
+/**
  * Check if customer exists by phone number
  */
 export const checkCustomer = async (req: Request, res: Response) => {

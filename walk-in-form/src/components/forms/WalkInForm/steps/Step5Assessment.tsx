@@ -1,10 +1,82 @@
 
 import React from 'react';
-import { Form, Radio, Select, Input, DatePicker, Button, Space } from 'antd';
+import { Form, Input, DatePicker, Button, Space, Card, Typography } from 'antd';
 import { MinusCircleOutlined, PlusOutlined } from '@ant-design/icons';
 
 const { TextArea } = Input;
-const { Option } = Select;
+const { Text } = Typography;
+
+// Grade options
+const gradeOptions = [
+  'A (Potential)',
+  'B',
+  'C',
+  'F'
+];
+
+// Reusable single-select clickable list (same style as Step 4)
+const ClickableList: React.FC<{
+  title: string;
+  options: string[];
+  value?: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+}> = ({ title, options, value, onChange, placeholder }) => (
+  <Card 
+    size="small" 
+    style={{ 
+      borderRadius: '8px',
+      border: value ? '2px solid #1890ff' : '1px solid #d9d9d9'
+    }}
+  >
+    <div style={{ marginBottom: '12px' }}>
+      <Text strong style={{ color: '#1890ff' }}>
+        {title}
+      </Text>
+      {placeholder && !value && (
+        <Text type="secondary" style={{ fontSize: '12px', marginLeft: '8px' }}>
+          ({placeholder})
+        </Text>
+      )}
+    </div>
+    <div style={{ 
+      display: 'grid', 
+      gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+      gap: '8px'
+    }}>
+      {options?.map(option => (
+        <div
+          key={option}
+          onClick={() => onChange(option)}
+          style={{
+            padding: '8px 12px',
+            borderRadius: '6px',
+            border: value === option ? '2px solid #1890ff' : '1px solid #e0e0e0',
+            backgroundColor: value === option ? '#f0f8ff' : '#fff',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            fontSize: '14px',
+            textAlign: 'center'
+          }}
+          onMouseEnter={(e) => {
+            if (value !== option) {
+              e.currentTarget.style.backgroundColor = '#f5f5f5';
+              e.currentTarget.style.borderColor = '#1890ff';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (value !== option) {
+              e.currentTarget.style.backgroundColor = '#fff';
+              e.currentTarget.style.borderColor = '#e0e0e0';
+            }
+          }}
+        >
+          {option}
+        </div>
+      ))}
+    </div>
+  </Card>
+);
 
 const latestStatusOptions = [
   'Win - Book',
@@ -36,34 +108,31 @@ const Step5Assessment: React.FC = () => {
         name="grade"
         rules={[{ required: true, message: 'กรุณาเลือก Grade' }]}
       >
-        <Radio.Group>
-          <Radio value="A (Potential)">
-            A (Potential)
-            <div style={{ fontWeight: 'normal', color: '#888', marginLeft: '24px' }}>มีศักยภาพสูง พร้อมตัดสินใจ</div>
-          </Radio>
-          <Radio value="B">
-            B (Interested)
-            <div style={{ fontWeight: 'normal', color: '#888', marginLeft: '24px' }}>สนใจ แต่ยังไม่พร้อมตัดสินใจ</div>
-          </Radio>
-          <Radio value="C">
-            C (Casual)
-            <div style={{ fontWeight: 'normal', color: '#888', marginLeft: '24px' }}>ดูข้อมูลเบื้องต้น</div>
-          </Radio>
-          <Radio value="F">
-            F (Dead)
-            <div style={{ fontWeight: 'normal', color: '#888', marginLeft: '24px' }}>ไม่สนใจ หรือไม่มีศักยภาพ</div>
-          </Radio>
-        </Radio.Group>
+        <Form.Item noStyle shouldUpdate>
+          {({ getFieldValue, setFieldsValue }) => (
+            <ClickableList
+              title="เลือก Grade"
+              options={gradeOptions}
+              value={getFieldValue('grade')}
+              onChange={(value) => setFieldsValue({ grade: value })}
+              placeholder="เลือกได้ 1 รายการ"
+            />
+          )}
+        </Form.Item>
       </Form.Item>
 
       <Form.Item label="สถานะล่าสุด" name="latestStatus">
-        <Select placeholder="เลือกสถานะ">
-          {latestStatusOptions.map(option => (
-            <Option key={option} value={option}>
-              {option}
-            </Option>
-          ))}
-        </Select>
+        <Form.Item noStyle shouldUpdate>
+          {({ getFieldValue, setFieldsValue }) => (
+            <ClickableList
+              title="เลือกสถานะล่าสุด"
+              options={latestStatusOptions}
+              value={getFieldValue('latestStatus')}
+              onChange={(value) => setFieldsValue({ latestStatus: value })}
+              placeholder="เลือกได้ 1 รายการ"
+            />
+          )}
+        </Form.Item>
       </Form.Item>
 
       <Form.Item label="รายละเอียดลูกค้า" name="customerDetails">
@@ -78,26 +147,44 @@ const Step5Assessment: React.FC = () => {
         {(fields, { add, remove }) => (
           <>
             {fields.map(({ key, name, ...restField }) => (
-              <Space key={key} style={{ display: 'flex', marginBottom: 8 }} align="baseline">
+              <div
+                key={key}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '240px 1fr 24px',
+                  alignItems: 'center',
+                  gap: 8,
+                  marginBottom: 8,
+                  width: '100%'
+                }}
+              >
                 <Form.Item
                   {...restField}
                   name={[name, 'date']}
                   rules={[{ required: true, message: 'กรุณาเลือกวันที่' }]}
+                  style={{ margin: 0 }}
                 >
-                  <DatePicker placeholder="วันที่ดำเนินการติดตาม" />
+                  <DatePicker style={{ width: '100%' }} placeholder="วันที่ดำเนินการติดตาม" format="DD/MM/YYYY" />
                 </Form.Item>
                 <Form.Item
                   {...restField}
                   name={[name, 'detail']}
                   rules={[{ required: true, message: 'กรุณากรอกรายละเอียด' }]}
+                  style={{ margin: 0 }}
                 >
-                  <Input placeholder="รายละเอียดการติดตาม" />
+                  <Input style={{ width: '100%' }} placeholder="รายละเอียดการติดตาม" />
                 </Form.Item>
-                <MinusCircleOutlined onClick={() => remove(name)} />
-              </Space>
+                <MinusCircleOutlined onClick={() => remove(name)} style={{ fontSize: 16, color: '#999' }} />
+              </div>
             ))}
             <Form.Item>
-              <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>
+              <Button 
+                type="dashed" 
+                onClick={() => add()} 
+                block 
+                icon={<PlusOutlined />} 
+                disabled={fields.length >= 2}
+              >
                 เพิ่มการติดตาม
               </Button>
             </Form.Item>

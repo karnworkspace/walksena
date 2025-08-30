@@ -1,9 +1,9 @@
 
 import React, { useEffect, useState } from 'react';
-import { Form, DatePicker, Select, Radio, Input } from 'antd';
+import { Form, DatePicker, Radio, Card, Typography } from 'antd';
 import axios from 'axios';
 
-const { Option } = Select;
+const { Text } = Typography;
 
 interface DropdownOptions {
   salesQueue: Array<{ value: string; label: string }>;
@@ -16,7 +16,70 @@ interface DropdownOptions {
 
 const Step1VisitInfo: React.FC = () => {
   const [options, setOptions] = useState<DropdownOptions | null>(null);
-  const [loading, setLoading] = useState(true);
+
+  // Custom Clickable List Component
+  const ClickableList: React.FC<{
+    title: string;
+    options: Array<{ value: string; label: string }>;
+    value?: string;
+    onChange: (value: string) => void;
+    placeholder?: string;
+  }> = ({ title, options, value, onChange, placeholder }) => (
+    <Card 
+      size="small" 
+      style={{ 
+        borderRadius: '8px',
+        border: value ? '2px solid #1890ff' : '1px solid #d9d9d9'
+      }}
+    >
+      <div style={{ marginBottom: '12px' }}>
+        <Text strong style={{ color: '#1890ff' }}>
+          {title}
+        </Text>
+        {placeholder && !value && (
+          <Text type="secondary" style={{ fontSize: '12px', marginLeft: '8px' }}>
+            ({placeholder})
+          </Text>
+        )}
+      </div>
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+        gap: '8px'
+      }}>
+        {options?.map(option => (
+          <div
+            key={option.value}
+            onClick={() => onChange(option.value)}
+            style={{
+              padding: '8px 12px',
+              borderRadius: '6px',
+              border: value === option.value ? '2px solid #1890ff' : '1px solid #e0e0e0',
+              backgroundColor: value === option.value ? '#f0f8ff' : '#fff',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              fontSize: '14px',
+              textAlign: 'center'
+            }}
+            onMouseEnter={(e) => {
+              if (value !== option.value) {
+                e.currentTarget.style.backgroundColor = '#f5f5f5';
+                e.currentTarget.style.borderColor = '#1890ff';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (value !== option.value) {
+                e.currentTarget.style.backgroundColor = '#fff';
+                e.currentTarget.style.borderColor = '#e0e0e0';
+              }
+            }}
+          >
+            {option.label}
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
 
   useEffect(() => {
     const fetchOptions = async () => {
@@ -27,8 +90,6 @@ const Step1VisitInfo: React.FC = () => {
         }
       } catch (error) {
         console.error('Failed to fetch dropdown options:', error);
-      } finally {
-        setLoading(false);
       }
     };
 
@@ -45,7 +106,7 @@ const Step1VisitInfo: React.FC = () => {
       >
         <DatePicker 
           style={{ width: '100%' }} 
-          format="YYYY-MM-DD"
+          format="DD/MM/YYYY"
           placeholder="เลือกวันที่"
           allowClear
         />
@@ -56,13 +117,17 @@ const Step1VisitInfo: React.FC = () => {
         name="salesQueue"
         rules={[{ required: true, message: 'กรุณาเลือก Sales ผู้ดูแล' }]}
       >
-        <Select placeholder="เลือก Sales ผู้ดูแล" loading={loading}>
-          {options?.salesQueue?.map(option => (
-            <Option key={option.value} value={option.value}>
-              {option.label}
-            </Option>
-          ))}
-        </Select>
+        <Form.Item noStyle shouldUpdate>
+          {({ getFieldValue, setFieldsValue }) => (
+            <ClickableList
+              title="เลือก Sales ผู้ดูแล"
+              options={options?.salesQueue || []}
+              value={getFieldValue('salesQueue')}
+              onChange={(value) => setFieldsValue({ salesQueue: value })}
+              placeholder="กรุณาเลือก Sales ผู้ดูแล"
+            />
+          )}
+        </Form.Item>
       </Form.Item>
 
       <Form.Item
@@ -83,39 +148,51 @@ const Step1VisitInfo: React.FC = () => {
         label="สื่อ Online"
         name="mediaOnline"
       >
-        <Select placeholder="เลือกสื่อ Online" loading={loading}>
-          {options?.mediaOnline?.map(option => (
-            <Option key={option.value} value={option.value}>
-              {option.label}
-            </Option>
-          ))}
-        </Select>
+        <Form.Item noStyle shouldUpdate>
+          {({ getFieldValue, setFieldsValue }) => (
+            <ClickableList
+              title="เลือกสื่อ Online"
+              options={options?.mediaOnline || []}
+              value={getFieldValue('mediaOnline')}
+              onChange={(value) => setFieldsValue({ mediaOnline: value })}
+              placeholder="เลือกช่องทางสื่อ Online ที่ลูกค้าเข้ามา"
+            />
+          )}
+        </Form.Item>
       </Form.Item>
 
       <Form.Item
         label="สื่อ Offline"
         name="mediaOffline"
       >
-        <Select placeholder="เลือกสื่อ Offline" loading={loading}>
-          {options?.mediaOffline?.map(option => (
-            <Option key={option.value} value={option.value}>
-              {option.label}
-            </Option>
-          ))}
-        </Select>
+        <Form.Item noStyle shouldUpdate>
+          {({ getFieldValue, setFieldsValue }) => (
+            <ClickableList
+              title="เลือกสื่อ Offline"
+              options={options?.mediaOffline || []}
+              value={getFieldValue('mediaOffline')}
+              onChange={(value) => setFieldsValue({ mediaOffline: value })}
+              placeholder="เลือกช่องทางสื่อ Offline ที่ลูกค้าเข้ามา"
+            />
+          )}
+        </Form.Item>
       </Form.Item>
 
       <Form.Item
         label="แหล่งที่มาของสื่อโฆษณาที่พบระหว่างเดินทาง (Pass Site)"
         name="passSiteSource"
       >
-        <Select placeholder="เลือกแหล่งที่มาของสื่อโฆษณา" loading={loading}>
-          {options?.passSiteSource?.map(option => (
-            <Option key={option.value} value={option.value}>
-              {option.label}
-            </Option>
-          ))}
-        </Select>
+        <Form.Item noStyle shouldUpdate>
+          {({ getFieldValue, setFieldsValue }) => (
+            <ClickableList
+              title="เลือกแหล่งที่มาของสื่อโฆษณา Pass Site"
+              options={options?.passSiteSource || []}
+              value={getFieldValue('passSiteSource')}
+              onChange={(value) => setFieldsValue({ passSiteSource: value })}
+              placeholder="เลือกสื่อโฆษณาที่พบระหว่างเดินทาง"
+            />
+          )}
+        </Form.Item>
       </Form.Item>
     </div>
   );
