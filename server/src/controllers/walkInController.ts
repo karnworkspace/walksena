@@ -120,6 +120,11 @@ export const updateWalkInForm = async (req: Request, res: Response) => {
       visitDate: formData.visitDate ? new Date(formData.visitDate).toISOString() : undefined,
     };
 
+    // Ensure monthlyIncome is a string (range) if sent as object/array
+    if (enrichedData && typeof (enrichedData as any).monthlyIncome === 'object') {
+      (enrichedData as any).monthlyIncome = String((enrichedData as any).monthlyIncome);
+    }
+
     const result = await googleSheetsService.updateByRunningNumber(runningNumber, enrichedData);
 
     if (result.success) {

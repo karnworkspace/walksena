@@ -189,11 +189,27 @@ const WalkInForm: React.FC = () => {
           const finalData = convertFormDatesForAPI(submissionData);
           console.log('Submitting data:', finalData, 'isDraft:', isDraft);
 
-          // Include running number when editing
-          if (isEditMode && !finalData.no && editingRecordId) {
-            const parsedNo = parseInt(String(editingRecordId), 10);
-            if (!isNaN(parsedNo)) {
+          // Include running number when editing (robust extraction)
+          if (isEditMode) {
+            const candidateNoValues = [
+              (finalData as any).no,
+              (formData as any)?.no,
+              editingRecordId,
+              (finalData as any).runningNumber,
+              (formData as any)?.runningNumber,
+            ].filter(Boolean);
+
+            let parsedNo: number | undefined;
+            for (const cand of candidateNoValues) {
+              const n = parseInt(String(cand), 10);
+              if (!isNaN(n)) { parsedNo = n; break; }
+            }
+
+            if (parsedNo !== undefined) {
               (finalData as any).no = parsedNo;
+            } else {
+              alert('ไม่พบหมายเลขแถว (No.) ของรายการที่กำลังแก้ไข กรุณาเปิดแก้ไขจากหน้ารายการอีกครั้ง');
+              return;
             }
           }
 
