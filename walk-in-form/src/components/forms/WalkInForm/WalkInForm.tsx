@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Form, Button, Steps, Divider, Modal, Descriptions } from 'antd';
 import { useSelector, useDispatch } from 'react-redux';
 import axios from 'axios';
+import { API_BASE } from '../../../config';
 import { RootState, AppDispatch } from '../../../store';
 import { setCurrentStep, updateFormData, clearForm } from '../../../store/slices/walkInFormSlice';
 import { convertFormDatesForAPI, safeParseDate } from '../../../utils/dateUtils';
@@ -220,8 +221,8 @@ const WalkInForm: React.FC<WalkInFormProps> = ({ onSubmitted, onHome }) => {
           }
 
           const endpoint = isEditMode 
-            ? 'http://localhost:3001/api/walkin/update' 
-            : 'http://localhost:3001/api/walkin/submit';
+            ? `${API_BASE}/api/walkin/update`
+            : `${API_BASE}/api/walkin/submit`;
 
           const response = await axios.post(endpoint, finalData);
 

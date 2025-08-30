@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Form, DatePicker, Radio, Card, Typography } from 'antd';
 import axios from 'axios';
+import { API_BASE } from '../../../../config';
 
 const { Text } = Typography;
 
@@ -84,7 +85,7 @@ const Step1VisitInfo: React.FC = () => {
   useEffect(() => {
     const fetchOptions = async () => {
       try {
-        const response = await axios.get('http://localhost:3001/api/walkin/dropdown-options');
+        const response = await axios.get(`${API_BASE}/api/walkin/dropdown-options`);
         if (response.data.success) {
           setOptions(response.data.options);
         }
