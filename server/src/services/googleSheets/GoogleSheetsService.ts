@@ -20,7 +20,9 @@ export class GoogleSheetsService {
       // Map form data to sheet columns (A-CF = 84 columns)
       const values = this.mapDataToSheetRow(data);
       
-      // Set running number in Column F (index 5) per current sheet layout
+      // Set running number in both Column A (index 0) and Column F (index 5)
+      // Some sheets reference A as RowId, while operational No. is kept in F
+      values[0] = runningNumber;
       values[5] = runningNumber;
       
       const response = await this.sheets.spreadsheets.values.append({
@@ -153,7 +155,9 @@ export class GoogleSheetsService {
 
       const rowNumber = targetRowIndex + 1; // 1-based for sheet
       const values = this.mapDataToSheetRow({ ...data, no });
-      values[5] = no; // keep running number in Column F
+      // Keep running number consistent in both A and F
+      values[0] = no;
+      values[5] = no;
 
       await this.sheets.spreadsheets.values.update({
         spreadsheetId: GOOGLE_CONFIG.spreadsheetId,
@@ -276,28 +280,38 @@ export class GoogleSheetsService {
   async getNextRunningNumber(): Promise<number> {
     try {
       console.log('🔢 Getting next running number...');
-      
-      const response = await this.sheets.spreadsheets.values.get({
-        spreadsheetId: GOOGLE_CONFIG.spreadsheetId,
-        range: `${GOOGLE_CONFIG.sheetName}!F:F`
-      });
 
-      const rows = response.data.values || [];
-      
-      // Skip header row and find the last numeric value
-      let maxNumber = 0;
-      for (let i = 1; i < rows.length; i++) {
-        const value = rows[i][0]; // single-column range F:F returns values in index 0
-        const num = parseInt(value);
-        if (!isNaN(num) && num > maxNumber) {
-          maxNumber = num;
+      // Read both A:A (RowId legacy) and F:F (current No.) and take the max
+      const [colA, colF] = await Promise.all([
+        this.sheets.spreadsheets.values.get({
+          spreadsheetId: GOOGLE_CONFIG.spreadsheetId,
+          range: `${GOOGLE_CONFIG.sheetName}!A:A`
+        }),
+        this.sheets.spreadsheets.values.get({
+          spreadsheetId: GOOGLE_CONFIG.spreadsheetId,
+          range: `${GOOGLE_CONFIG.sheetName}!F:F`
+        })
+      ]);
+
+      const rowsA = colA.data.values || [];
+      const rowsF = colF.data.values || [];
+
+      const maxFrom = (rows: string[][]): number => {
+        let max = 0;
+        for (let i = 1; i < rows.length; i++) {
+          const val = rows[i][0];
+          const num = parseInt(val);
+          if (!isNaN(num) && num > max) max = num;
         }
-      }
-      
-      const nextNumber = maxNumber + 1;
-      console.log('✅ Next running number:', nextNumber);
+        return max;
+      };
+
+      const maxA = maxFrom(rowsA);
+      const maxF = maxFrom(rowsF);
+      const nextNumber = Math.max(maxA, maxF) + 1;
+      console.log('✅ Next running number:', nextNumber, `(A:${maxA}, F:${maxF})`);
       return nextNumber;
-      
+
     } catch (error) {
       console.error('❌ Failed to get running number:', error);
       return 1; // Default to 1 if error
