@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Table, Spin, Alert, Card, Tag, Typography, Row, Col, Button, Modal, Descriptions } from 'antd';
 import { UserOutlined, PhoneOutlined, MailOutlined, EditOutlined } from '@ant-design/icons';
 import axios from 'axios';
+import { API_BASE } from '../../config';
 
 const { Text } = Typography;
 
@@ -48,7 +49,7 @@ const WalkInList: React.FC<WalkInListProps> = ({ onEdit, onView }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await axios.get('http://localhost:3001/api/walkin/entries');
+        const response = await axios.get(`${API_BASE}/api/walkin/entries`);
         const raw: WalkInData[] = response.data.data || [];
 
         const getNo = (r: WalkInData) => {
