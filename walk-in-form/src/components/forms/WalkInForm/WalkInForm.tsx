@@ -49,9 +49,10 @@ const steps = [
 
 interface WalkInFormProps {
   onSubmitted?: () => void;
+  onHome?: () => void;
 }
 
-const WalkInForm: React.FC<WalkInFormProps> = ({ onSubmitted }) => {
+const WalkInForm: React.FC<WalkInFormProps> = ({ onSubmitted, onHome }) => {
   const dispatch = useDispatch<AppDispatch>();
   const currentStep = useSelector((state: RootState) => state.walkInForm.currentStep);
   const formData = useSelector((state: RootState) => state.walkInForm.formData);
@@ -404,6 +405,15 @@ const WalkInForm: React.FC<WalkInFormProps> = ({ onSubmitted }) => {
         gap: '8px',
         zIndex: 999
       }}>
+        <Button 
+          shape="round"
+          onClick={() => {
+            if (typeof onHome === 'function') onHome();
+          }}
+          style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}
+        >
+          ⌂ Home
+        </Button>
         {activeSection > 0 && (
           <Button 
             shape="round" 

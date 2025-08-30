@@ -46,7 +46,7 @@ const App: React.FC = () => {
             </Button>
           </div>
           {view === 'form' ? (
-            <WalkInForm onSubmitted={() => setView('list')} />
+            <WalkInForm onSubmitted={() => setView('list')} onHome={() => setView('list')} />
           ) : (
             <WalkInList 
               onEdit={(record) => {
