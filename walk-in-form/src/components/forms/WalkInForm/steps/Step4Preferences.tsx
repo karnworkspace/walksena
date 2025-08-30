@@ -1,8 +1,8 @@
 
 import React from 'react';
-import { Form, Input, Select, InputNumber } from 'antd';
+import { Form, Card, Typography } from 'antd';
 
-const { Option } = Select;
+const { Text } = Typography;
 
 // ประเภทห้องที่สนใจ
 const roomTypes = [
@@ -98,96 +98,273 @@ const promotionInterests = [
 ];
 
 const Step4Preferences: React.FC = () => {
+  // Custom Clickable List Component
+  const ClickableList: React.FC<{
+    title: string;
+    options: string[];
+    value?: string;
+    onChange: (value: string) => void;
+    placeholder?: string;
+  }> = ({ title, options, value, onChange, placeholder }) => (
+    <Card 
+      size="small" 
+      style={{ 
+        borderRadius: '8px',
+        border: value ? '2px solid #1890ff' : '1px solid #d9d9d9'
+      }}
+    >
+      <div style={{ marginBottom: '12px' }}>
+        <Text strong style={{ color: '#1890ff' }}>
+          {title}
+        </Text>
+        {placeholder && !value && (
+          <Text type="secondary" style={{ fontSize: '12px', marginLeft: '8px' }}>
+            ({placeholder})
+          </Text>
+        )}
+      </div>
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+        gap: '8px'
+      }}>
+        {options?.map(option => (
+          <div
+            key={option}
+            onClick={() => onChange(option)}
+            style={{
+              padding: '8px 12px',
+              borderRadius: '6px',
+              border: value === option ? '2px solid #1890ff' : '1px solid #e0e0e0',
+              backgroundColor: value === option ? '#f0f8ff' : '#fff',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              fontSize: '14px',
+              textAlign: 'center'
+            }}
+            onMouseEnter={(e) => {
+              if (value !== option) {
+                e.currentTarget.style.backgroundColor = '#f5f5f5';
+                e.currentTarget.style.borderColor = '#1890ff';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (value !== option) {
+                e.currentTarget.style.backgroundColor = '#fff';
+                e.currentTarget.style.borderColor = '#e0e0e0';
+              }
+            }}
+          >
+            {option}
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+
+  // Multi-Select Clickable List Component
+  const MultiSelectClickableList: React.FC<{
+    title: string;
+    options: string[];
+    value?: string[];
+    onChange: (value: string[]) => void;
+    placeholder?: string;
+  }> = ({ title, options, value = [], onChange, placeholder }) => (
+    <Card 
+      size="small" 
+      style={{ 
+        borderRadius: '8px',
+        border: value.length > 0 ? '2px solid #1890ff' : '1px solid #d9d9d9'
+      }}
+    >
+      <div style={{ marginBottom: '12px' }}>
+        <Text strong style={{ color: '#1890ff' }}>
+          {title}
+        </Text>
+        {placeholder && value.length === 0 && (
+          <Text type="secondary" style={{ fontSize: '12px', marginLeft: '8px' }}>
+            ({placeholder})
+          </Text>
+        )}
+        {value.length > 0 && (
+          <Text type="secondary" style={{ fontSize: '12px', marginLeft: '8px' }}>
+            ({value.length} selected)
+          </Text>
+        )}
+      </div>
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+        gap: '8px'
+      }}>
+        {options?.map(option => {
+          const isSelected = value.includes(option);
+          return (
+            <div
+              key={option}
+              onClick={() => {
+                const newValue = isSelected 
+                  ? value.filter(v => v !== option)
+                  : [...value, option];
+                onChange(newValue);
+              }}
+              style={{
+                padding: '8px 12px',
+                borderRadius: '6px',
+                border: isSelected ? '2px solid #1890ff' : '1px solid #e0e0e0',
+                backgroundColor: isSelected ? '#f0f8ff' : '#fff',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                fontSize: '14px',
+                textAlign: 'center'
+              }}
+              onMouseEnter={(e) => {
+                if (!isSelected) {
+                  e.currentTarget.style.backgroundColor = '#f5f5f5';
+                  e.currentTarget.style.borderColor = '#1890ff';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isSelected) {
+                  e.currentTarget.style.backgroundColor = '#fff';
+                  e.currentTarget.style.borderColor = '#e0e0e0';
+                }
+              }}
+            >
+              {option}
+            </div>
+          );
+        })}
+      </div>
+    </Card>
+  );
+
   return (
     <div>
       <Form.Item label="ประเภทห้องที่สนใจ" name="roomType">
-        <Select placeholder="เลือกประเภทห้อง">
-          {roomTypes.map(roomType => (
-            <Option key={roomType} value={roomType}>
-              {roomType}
-            </Option>
-          ))}
-        </Select>
+        <Form.Item noStyle shouldUpdate>
+          {({ getFieldValue, setFieldsValue }) => (
+            <ClickableList
+              title="เลือกประเภทห้องที่สนใจ"
+              options={roomTypes}
+              value={getFieldValue('roomType')}
+              onChange={(value) => setFieldsValue({ roomType: value })}
+              placeholder="เลือกประเภทห้องที่ต้องการ"
+            />
+          )}
+        </Form.Item>
       </Form.Item>
 
       <Form.Item label="งบประมาณ" name="budget">
-        <Select placeholder="เลือกช่วงงบประมาณ">
-          {budgetRanges.map(budget => (
-            <Option key={budget} value={budget}>
-              {budget}
-            </Option>
-          ))}
-        </Select>
+        <Form.Item noStyle shouldUpdate>
+          {({ getFieldValue, setFieldsValue }) => (
+            <ClickableList
+              title="เลือกช่วงงบประมาณ"
+              options={budgetRanges}
+              value={getFieldValue('budget')}
+              onChange={(value) => setFieldsValue({ budget: value })}
+              placeholder="เลือกงบประมาณที่เหมาะสม"
+            />
+          )}
+        </Form.Item>
       </Form.Item>
 
       <Form.Item label="ระยะเวลาในการตัดสินใจ" name="decisionTimeframe">
-        <Select placeholder="เลือกระยะเวลา">
-          {decisionTimeframes.map(timeframe => (
-            <Option key={timeframe} value={timeframe}>
-              {timeframe}
-            </Option>
-          ))}
-        </Select>
+        <Form.Item noStyle shouldUpdate>
+          {({ getFieldValue, setFieldsValue }) => (
+            <ClickableList
+              title="เลือกระยะเวลาในการตัดสินใจ"
+              options={decisionTimeframes}
+              value={getFieldValue('decisionTimeframe')}
+              onChange={(value) => setFieldsValue({ decisionTimeframe: value })}
+              placeholder="เลือกระยะเวลาที่คาดว่าจะตัดสินใจ"
+            />
+          )}
+        </Form.Item>
       </Form.Item>
 
       <Form.Item label="วัตถุประสงค์ในการซื้อ" name="purchasePurpose">
-        <Select placeholder="เลือกวัตถุประสงค์">
-          {purchasePurposes.map(purpose => (
-            <Option key={purpose} value={purpose}>
-              {purpose}
-            </Option>
-          ))}
-        </Select>
+        <Form.Item noStyle shouldUpdate>
+          {({ getFieldValue, setFieldsValue }) => (
+            <ClickableList
+              title="เลือกวัตถุประสงค์ในการซื้อ"
+              options={purchasePurposes}
+              value={getFieldValue('purchasePurpose')}
+              onChange={(value) => setFieldsValue({ purchasePurpose: value })}
+              placeholder="เลือกเหตุผลหลักในการซื้อ"
+            />
+          )}
+        </Form.Item>
       </Form.Item>
 
       <Form.Item label="เส้นทางหลักในการเดินทางมายังโครงการ" name="mainRoute">
-        <Select placeholder="เลือกเส้นทางหลัก">
-          {mainRoutes.map(route => (
-            <Option key={route} value={route}>
-              {route}
-            </Option>
-          ))}
-        </Select>
+        <Form.Item noStyle shouldUpdate>
+          {({ getFieldValue, setFieldsValue }) => (
+            <ClickableList
+              title="เลือกเส้นทางหลักในการเดินทาง"
+              options={mainRoutes}
+              value={getFieldValue('mainRoute')}
+              onChange={(value) => setFieldsValue({ mainRoute: value })}
+              placeholder="เลือกเส้นทางที่ใช้บ่อยที่สุด"
+            />
+          )}
+        </Form.Item>
       </Form.Item>
 
       <Form.Item label="ปัจจัยที่มีผลต่อการตัดสินใจ" name="decisionFactors">
-        <Select placeholder="เลือกปัจจัยในการตัดสินใจ">
-          {decisionFactors.map(factor => (
-            <Option key={factor} value={factor}>
-              {factor}
-            </Option>
-          ))}
-        </Select>
+        <Form.Item noStyle shouldUpdate>
+          {({ getFieldValue, setFieldsValue }) => (
+            <ClickableList
+              title="เลือกปัจจัยที่มีผลต่อการตัดสินใจ"
+              options={decisionFactors}
+              value={getFieldValue('decisionFactors')}
+              onChange={(value) => setFieldsValue({ decisionFactors: value })}
+              placeholder="เลือกปัจจัยสำคัญในการตัดสินใจ"
+            />
+          )}
+        </Form.Item>
       </Form.Item>
 
       <Form.Item label="สิ่งที่สนใจเป็นพิเศษ" name="interests">
-        <Select mode="multiple" placeholder="เลือกสิ่งที่สนใจ (เลือกได้หลายรายการ)">
-          {interests.map(interest => (
-            <Option key={interest} value={interest}>
-              {interest}
-            </Option>
-          ))}
-        </Select>
+        <Form.Item noStyle shouldUpdate>
+          {({ getFieldValue, setFieldsValue }) => (
+            <MultiSelectClickableList
+              title="เลือกสิ่งที่สนใจเป็นพิเศษ"
+              options={interests}
+              value={getFieldValue('interests')}
+              onChange={(value) => setFieldsValue({ interests: value })}
+              placeholder="เลือกได้หลายรายการ"
+            />
+          )}
+        </Form.Item>
       </Form.Item>
 
       <Form.Item label="ห้างสรรพสินค้าที่ไปบ่อย" name="shoppingMalls">
-        <Select mode="multiple" placeholder="เลือกห้างสรรพสินค้า (เลือกได้หลายรายการ)">
-          {shoppingMalls.map(mall => (
-            <Option key={mall} value={mall}>
-              {mall}
-            </Option>
-          ))}
-        </Select>
+        <Form.Item noStyle shouldUpdate>
+          {({ getFieldValue, setFieldsValue }) => (
+            <MultiSelectClickableList
+              title="เลือกห้างสรรพสินค้าที่ไปบ่อย"
+              options={shoppingMalls}
+              value={getFieldValue('shoppingMalls')}
+              onChange={(value) => setFieldsValue({ shoppingMalls: value })}
+              placeholder="เลือกได้หลายรายการ"
+            />
+          )}
+        </Form.Item>
       </Form.Item>
 
       <Form.Item label="โปรโมชั่นที่สนใจ" name="promotionInterest">
-        <Select mode="multiple" placeholder="เลือกโปรโมชั่นที่สนใจ (เลือกได้หลายรายการ)">
-          {promotionInterests.map(interest => (
-            <Option key={interest} value={interest}>
-              {interest}
-            </Option>
-          ))}
-        </Select>
+        <Form.Item noStyle shouldUpdate>
+          {({ getFieldValue, setFieldsValue }) => (
+            <MultiSelectClickableList
+              title="เลือกโปรโมชั่นที่สนใจ"
+              options={promotionInterests}
+              value={getFieldValue('promotionInterest')}
+              onChange={(value) => setFieldsValue({ promotionInterest: value })}
+              placeholder="เลือกได้หลายรายการ"
+            />
+          )}
+        </Form.Item>
       </Form.Item>
     </div>
   );

@@ -276,6 +276,54 @@
   min-height: 300px;
 }
 
+/* Responsive Table Styles */
+.responsive-table .ant-table-tbody > tr > td {
+  padding: 12px 8px;
+  vertical-align: top;
+}
+
+.responsive-table .ant-table-thead > tr > th {
+  padding: 16px 8px;
+  font-weight: 600;
+  background-color: #fafafa;
+}
+
+/* Desktop Table - No horizontal scroll */
+@media screen and (min-width: 992px) {
+  .responsive-table .ant-table-container {
+    overflow-x: visible;
+  }
+  
+  .responsive-table .ant-table-body {
+    overflow-x: visible;
+  }
+}
+
+/* Tablet optimizations */
+@media screen and (min-width: 576px) and (max-width: 991px) {
+  .responsive-table .ant-table-tbody > tr > td {
+    padding: 8px 6px;
+    font-size: 13px;
+  }
+  
+  .responsive-table .ant-table-thead > tr > th {
+    padding: 12px 6px;
+    font-size: 14px;
+  }
+}
+
+/* Mobile Card View optimizations */
+@media screen and (max-width: 575px) {
+  .form-card .ant-card-body {
+    padding: 12px;
+  }
+  
+  .mobile-card-actions {
+    justify-content: center;
+    gap: 8px;
+  }
+}
+
 /* Custom scrollbar for touch devices */
 ::-webkit-scrollbar {
   width: 8px;

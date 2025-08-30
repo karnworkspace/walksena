@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Spin, Alert, Card, Tag, Typography, Row, Col, Button, Space } from 'antd';
-import { UserOutlined, PhoneOutlined, MailOutlined, EditOutlined, EyeOutlined } from '@ant-design/icons';
+import { Table, Spin, Alert, Card, Tag, Typography, Row, Col, Button } from 'antd';
+import { UserOutlined, PhoneOutlined, MailOutlined, EditOutlined } from '@ant-design/icons';
 import axios from 'axios';
 
 const { Text } = Typography;
@@ -142,23 +142,15 @@ const WalkInList: React.FC<WalkInListProps> = ({ onEdit, onView }) => {
             </Col>
             
             <Col span={24} style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #f0f0f0' }}>
-              <Space size="small" style={{ width: '100%', justifyContent: 'center' }}>
-                <Button 
-                  type="primary" 
-                  icon={<EditOutlined />} 
-                  size="small"
-                  onClick={() => onEdit?.(record)}
-                >
-                  Edit
-                </Button>
-                <Button 
-                  icon={<EyeOutlined />} 
-                  size="small"
-                  onClick={() => onView?.(record)}
-                >
-                  View
-                </Button>
-              </Space>
+              <Button 
+                type="primary" 
+                icon={<EditOutlined />} 
+                size="middle"
+                block
+                onClick={() => onEdit?.(record)}
+              >
+                Edit Record
+              </Button>
             </Col>
           </Row>
         </Card>
@@ -166,88 +158,92 @@ const WalkInList: React.FC<WalkInListProps> = ({ onEdit, onView }) => {
     </div>
   );
 
-  // Desktop Table View
+  // Desktop Table View - Responsive without horizontal scroll
   const DesktopTableView = () => {
     const columns = [
       {
         title: 'No.',
         dataIndex: 'No.',
         key: 'no',
-        width: 60,
-        fixed: 'left' as const,
-      },
-      {
-        title: 'Name',
-        dataIndex: 'ชื่อ นามสกุล',
-        key: 'name',
-        width: 200,
-        fixed: 'left' as const,
-      },
-      {
-        title: 'Phone',
-        dataIndex: 'หมายเลขโทรศัพท์',
-        key: 'phone',
-        width: 150,
-      },
-      {
-        title: 'Grade',
-        dataIndex: 'Grade',
-        key: 'grade',
-        width: 100,
-        render: (grade: string) => (
-          <Tag color={getGradeColor(grade)}>{grade}</Tag>
+        width: '60px',
+        render: (no: string) => (
+          <Text strong style={{ color: '#1890ff' }}>#{no}</Text>
         ),
       },
       {
-        title: 'Sales',
-        dataIndex: 'Sales Queue',
-        key: 'sales',
-        width: 100,
+        title: 'Customer Info',
+        key: 'customerInfo',
+        render: (_: any, record: WalkInData) => (
+          <div>
+            <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>
+              <UserOutlined style={{ marginRight: '6px', color: '#1890ff' }} />
+              {record['ชื่อ นามสกุล'] || 'N/A'}
+            </div>
+            <div style={{ fontSize: '12px', color: '#666' }}>
+              <PhoneOutlined style={{ marginRight: '6px' }} />
+              {record['หมายเลขโทรศัพท์'] || 'N/A'}
+            </div>
+            {record['Email'] && (
+              <div style={{ fontSize: '12px', color: '#666' }}>
+                <MailOutlined style={{ marginRight: '6px' }} />
+                {record['Email']}
+              </div>
+            )}
+          </div>
+        ),
       },
       {
         title: 'Visit Date',
         dataIndex: 'DATE ( เข้าชมโครงการ )',
         key: 'visitDate',
-        width: 120,
+        width: '110px',
+        render: (date: string) => (
+          <Text style={{ fontSize: '13px' }}>{date || 'N/A'}</Text>
+        ),
       },
       {
         title: 'Room Type',
         dataIndex: 'รูปแบบห้องที่ต้องการ ',
         key: 'roomType',
-        width: 150,
+        render: (roomType: string) => (
+          <Text style={{ fontSize: '13px' }}>{roomType || 'N/A'}</Text>
+        ),
       },
       {
         title: 'Status',
-        dataIndex: 'Status ล่าสุด ( เหตุผลที่ยังไม่ติดสินใจ )',
-        key: 'status',
-        width: 200,
-        render: (status: string) => (
-          <Tag color={getStatusColor(status)}>{status || 'N/A'}</Tag>
+        key: 'statusInfo', 
+        render: (_: any, record: WalkInData) => (
+          <div>
+            <div style={{ marginBottom: '4px' }}>
+              <Tag color={getGradeColor(record['Grade'] || '')}>
+                {record['Grade'] || 'N/A'}
+              </Tag>
+            </div>
+            <div>
+              <Tag 
+                color={getStatusColor(record['Status ล่าสุด ( เหตุผลที่ยังไม่ติดสินใจ )'] || '')}
+                style={{ fontSize: '11px' }}
+              >
+                {record['Status ล่าสุด ( เหตุผลที่ยังไม่ติดสินใจ )'] || 'N/A'}
+              </Tag>
+            </div>
+          </div>
         ),
       },
       {
         title: 'Actions',
         key: 'actions',
-        width: 120,
-        fixed: 'right' as const,
+        width: '100px',
         render: (_: any, record: WalkInData) => (
-          <Space size="small">
-            <Button 
-              type="primary" 
-              icon={<EditOutlined />} 
-              size="small"
-              onClick={() => onEdit?.(record)}
-            >
-              Edit
-            </Button>
-            <Button 
-              icon={<EyeOutlined />} 
-              size="small"
-              onClick={() => onView?.(record)}
-            >
-              View
-            </Button>
-          </Space>
+          <Button 
+            type="primary" 
+            icon={<EditOutlined />} 
+            size="middle"
+            onClick={() => onEdit?.(record)}
+            block
+          >
+            Edit
+          </Button>
         ),
       },
     ];
@@ -257,8 +253,8 @@ const WalkInList: React.FC<WalkInListProps> = ({ onEdit, onView }) => {
         dataSource={data}
         columns={columns}
         rowKey={record => record['No.'] || Math.random().toString()}
-        scroll={{ x: 1320, y: 600 }}
-        size="small"
+        scroll={{ y: 600 }}
+        size="middle"
         pagination={{
           pageSize: 20,
           showSizeChanger: true,
@@ -266,19 +262,114 @@ const WalkInList: React.FC<WalkInListProps> = ({ onEdit, onView }) => {
           showTotal: (total, range) => 
             `${range[0]}-${range[1]} of ${total} items`,
         }}
+        className="responsive-table"
       />
     );
   };
 
-  // Check if mobile view
-  const isMobile = window.innerWidth < 768;
+  // Compact Table View for tablets
+  const TabletTableView = () => {
+    const columns = [
+      {
+        title: 'Customer',
+        key: 'customer',
+        render: (_: any, record: WalkInData) => (
+          <div>
+            <div style={{ fontWeight: 'bold', fontSize: '14px', marginBottom: '2px' }}>
+              #{record['No.']} {record['ชื่อ นามสกุล'] || 'N/A'}
+            </div>
+            <div style={{ fontSize: '12px', color: '#666' }}>
+              📞 {record['หมายเลขโทรศัพท์'] || 'N/A'}
+            </div>
+            <div style={{ fontSize: '11px', color: '#999', marginTop: '2px' }}>
+              📅 {record['DATE ( เข้าชมโครงการ )'] || 'N/A'}
+            </div>
+          </div>
+        ),
+      },
+      {
+        title: 'Details',
+        key: 'details',
+        render: (_: any, record: WalkInData) => (
+          <div>
+            <div style={{ marginBottom: '4px' }}>
+              <Tag color={getGradeColor(record['Grade'] || '')}>
+                {record['Grade'] || 'N/A'}
+              </Tag>
+            </div>
+            <div style={{ fontSize: '11px', marginBottom: '2px' }}>
+              🏠 {record['รูปแบบห้องที่ต้องการ '] || 'N/A'}
+            </div>
+            <div>
+              <Tag 
+                color={getStatusColor(record['Status ล่าสุด ( เหตุผลที่ยังไม่ติดสินใจ )'] || '')}
+                style={{ fontSize: '10px' }}
+              >
+                {record['Status ล่าสุด ( เหตุผลที่ยังไม่ติดสินใจ )'] || 'N/A'}
+              </Tag>
+            </div>
+          </div>
+        ),
+      },
+      {
+        title: 'Actions',
+        key: 'actions',
+        width: '80px',
+        render: (_: any, record: WalkInData) => (
+          <Button 
+            type="primary" 
+            icon={<EditOutlined />} 
+            size="small"
+            block
+            onClick={() => onEdit?.(record)}
+          >
+            Edit
+          </Button>
+        ),
+      },
+    ];
+
+    return (
+      <Table
+        dataSource={data}
+        columns={columns}
+        rowKey={record => record['No.'] || Math.random().toString()}
+        scroll={{ y: 500 }}
+        size="small"
+        pagination={{
+          pageSize: 15,
+          showSizeChanger: false,
+          showQuickJumper: false,
+          showTotal: (total, range) => 
+            `${range[0]}-${range[1]} of ${total}`,
+        }}
+      />
+    );
+  };
+
+  // Responsive view selection
+  const getResponsiveView = () => {
+    const width = window.innerWidth;
+    if (width < 576) return <MobileCardView />;      // Mobile
+    if (width < 992) return <TabletTableView />;     // Tablet  
+    return <DesktopTableView />;                     // Desktop
+  };
 
   return (
     <Card 
-      title={`Walk-in Records (${data.length} entries)`}
+      title={
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span>Walk-in Records ({data.length} entries)</span>
+          <div style={{ fontSize: '12px', color: '#666', fontWeight: 'normal' }}>
+            {window.innerWidth < 576 ? '📱 Mobile View' : 
+             window.innerWidth < 992 ? '💻 Tablet View' : 
+             '🖥️ Desktop View'}
+          </div>
+        </div>
+      }
       className="form-card"
     >
-      {isMobile ? <MobileCardView /> : <DesktopTableView />}
+      {getResponsiveView()}
     </Card>
   );
 };
