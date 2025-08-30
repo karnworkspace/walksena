@@ -20,8 +20,8 @@ export class GoogleSheetsService {
       // Map form data to sheet columns (A-CF = 84 columns)
       const values = this.mapDataToSheetRow(data);
       
-      // Set running number in Column A (index 0)
-      values[0] = runningNumber;
+      // Set running number in Column F (index 5) per current sheet layout
+      values[5] = runningNumber;
       
       const response = await this.sheets.spreadsheets.values.append({
         spreadsheetId: GOOGLE_CONFIG.spreadsheetId,
@@ -78,7 +78,7 @@ export class GoogleSheetsService {
             exists: true,
             data: {
               rowNumber: i + 1,
-              runningNumber: row[0],    // Column A = running number
+              runningNumber: row[5] ?? row[0],    // Prefer Column F; fallback Column A
               fullName: row[16],        // Column Q = full name
               phoneNumber: row[17],     // Column R = phone number
               email: row[18],           // Column S = email
@@ -130,7 +130,7 @@ export class GoogleSheetsService {
 
   async updateByRunningNumber(no: number, data: WalkInFormData): Promise<{ success: boolean; rowNumber?: number; error?: string }> {
     try {
-      // Fetch rows to find the row index for given running number in Column A (index 0)
+      // Fetch rows to find the row index for given running number
       const response = await this.sheets.spreadsheets.values.get({
         spreadsheetId: GOOGLE_CONFIG.spreadsheetId,
         range: `${GOOGLE_CONFIG.sheetName}!A:CF`,
@@ -140,7 +140,7 @@ export class GoogleSheetsService {
       let targetRowIndex = -1; // 0-based including header
 
       for (let i = 1; i < rows.length; i++) { // skip header row
-        const rowNo = rows[i][0];
+        const rowNo = rows[i][5] ?? rows[i][0];
         if (rowNo && Number(rowNo) === Number(no)) {
           targetRowIndex = i; // 0-based
           break;
@@ -153,7 +153,7 @@ export class GoogleSheetsService {
 
       const rowNumber = targetRowIndex + 1; // 1-based for sheet
       const values = this.mapDataToSheetRow({ ...data, no });
-      values[0] = no; // keep running number
+      values[5] = no; // keep running number in Column F
 
       await this.sheets.spreadsheets.values.update({
         spreadsheetId: GOOGLE_CONFIG.spreadsheetId,
@@ -256,7 +256,11 @@ export class GoogleSheetsService {
 
   private formatDate(date?: Date | string): string {
     if (!date) return '';
-    return new Date(date).toLocaleDateString('th-TH');
+    const d = new Date(date);
+    const day = d.getDate();
+    const month = d.getMonth() + 1;
+    const year = d.getFullYear();
+    return `${day}/${month}/${year}`; // Use Gregorian (AD) dd/m/yyyy
   }
 
   private normalizePhoneNumber(phone: string): string {
@@ -269,7 +273,7 @@ export class GoogleSheetsService {
       
       const response = await this.sheets.spreadsheets.values.get({
         spreadsheetId: GOOGLE_CONFIG.spreadsheetId,
-        range: `${GOOGLE_CONFIG.sheetName}!A:A`
+        range: `${GOOGLE_CONFIG.sheetName}!F:F`
       });
 
       const rows = response.data.values || [];
@@ -277,7 +281,7 @@ export class GoogleSheetsService {
       // Skip header row and find the last numeric value
       let maxNumber = 0;
       for (let i = 1; i < rows.length; i++) {
-        const value = rows[i][0];
+        const value = rows[i][0]; // single-column range F:F returns values in index 0
         const num = parseInt(value);
         if (!isNaN(num) && num > maxNumber) {
           maxNumber = num;

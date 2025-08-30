@@ -118,7 +118,12 @@ export function convertGoogleSheetsToFormData(sheetsData: GoogleSheetsData): For
         if (parts.length === 3) {
           const day = parseInt(parts[0]);
           const month = parseInt(parts[1]);
-          const year = parseInt(parts[2]);
+          let year = parseInt(parts[2]);
+
+          // Convert Buddhist Era to Gregorian if necessary
+          if (!isNaN(year) && year > 2400) {
+            year = year - 543;
+          }
           
           // Validate numbers
           if (isNaN(day) || isNaN(month) || isNaN(year)) {
