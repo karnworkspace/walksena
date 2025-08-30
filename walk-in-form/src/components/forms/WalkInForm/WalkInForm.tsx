@@ -47,7 +47,11 @@ const steps = [
   },
 ];
 
-const WalkInForm: React.FC = () => {
+interface WalkInFormProps {
+  onSubmitted?: () => void;
+}
+
+const WalkInForm: React.FC<WalkInFormProps> = ({ onSubmitted }) => {
   const dispatch = useDispatch<AppDispatch>();
   const currentStep = useSelector((state: RootState) => state.walkInForm.currentStep);
   const formData = useSelector((state: RootState) => state.walkInForm.formData);
@@ -228,6 +232,10 @@ const WalkInForm: React.FC = () => {
             if (!isDraft) {
               dispatch(clearForm());
               form.resetFields();
+              // After successful non-draft submission, navigate back if provided
+              if (typeof onSubmitted === 'function') {
+                onSubmitted();
+              }
             }
           } else {
             alert(`${isDraft ? 'Draft save' : (isEditMode ? 'Update' : 'Submission')} failed: ${response.data.message}`);

@@ -46,7 +46,7 @@ const App: React.FC = () => {
             </Button>
           </div>
           {view === 'form' ? (
-            <WalkInForm />
+            <WalkInForm onSubmitted={() => setView('list')} />
           ) : (
             <WalkInList 
               onEdit={(record) => {
@@ -100,19 +100,6 @@ const App: React.FC = () => {
                   
                   console.log('Clean form data:', cleanFormData);
                   
-                  // Derive running number (robust across header variants)
-                  const runningNo =
-                    String(
-                      record['No.'] ||
-                      (formData as any).no ||
-                      record['No'] ||
-                      record['NO'] ||
-                      record['no'] ||
-                      record['Running Number'] ||
-                      record['RunningNo'] ||
-                      ''
-                    ).trim();
-
                   // Derive running number (robust across header variants)
                   const runningNo =
                     String(
@@ -192,19 +179,6 @@ const App: React.FC = () => {
                   
                   console.log('Clean form data for view:', cleanFormData);
                   
-                  // Derive running number (robust across header variants)
-                  const runningNo =
-                    String(
-                      record['No.'] ||
-                      (formData as any).no ||
-                      record['No'] ||
-                      record['NO'] ||
-                      record['no'] ||
-                      record['Running Number'] ||
-                      record['RunningNo'] ||
-                      ''
-                    ).trim();
-
                   // Derive running number (robust across header variants)
                   const runningNo =
                     String(
