@@ -15,8 +15,10 @@ if (!process.env.SPREADSHEET_ID) {
 // Load service account credentials from environment variable
 let serviceAccountKey: any;
 try {
-  if (process.env.GOOGLE_SERVICE_ACCOUNT) {
-    serviceAccountKey = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
+  const serviceAccountJson = process.env.GOOGLE_SERVICE_ACCOUNT || process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
+  
+  if (serviceAccountJson) {
+    serviceAccountKey = JSON.parse(serviceAccountJson);
     
     // Fix private key format for OpenSSL compatibility
     if (serviceAccountKey.private_key) {
@@ -28,7 +30,7 @@ try {
     console.log('   Project ID:', serviceAccountKey.project_id);
     console.log('   Client Email:', serviceAccountKey.client_email);
   } else {
-    throw new Error('GOOGLE_SERVICE_ACCOUNT environment variable not found');
+    throw new Error('GOOGLE_SERVICE_ACCOUNT or GOOGLE_SERVICE_ACCOUNT_KEY environment variable not found');
   }
 } catch (error) {
   console.error('❌ Failed to load service account credentials:', error);

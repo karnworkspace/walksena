@@ -14,10 +14,11 @@ if (!process.env.SPREADSHEET_ID) {
 let auth: GoogleAuth;
 
 // Check if we're in a production/Replit environment (has GOOGLE_SERVICE_ACCOUNT)
-if (process.env.GOOGLE_SERVICE_ACCOUNT) {
+const serviceAccountJson = process.env.GOOGLE_SERVICE_ACCOUNT || process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
+if (serviceAccountJson) {
   try {
-    console.log('📋 Using GOOGLE_SERVICE_ACCOUNT environment variable');
-    const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
+    console.log('📋 Using service account credentials from environment variable');
+    const credentials = JSON.parse(serviceAccountJson);
     auth = new GoogleAuth({
       credentials,
       scopes: [
