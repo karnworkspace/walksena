@@ -24,14 +24,16 @@ interface WalkInData {
 interface WalkInListProps {
   onEdit?: (record: WalkInData) => void;
   onView?: (record: WalkInData) => void;
+  onCountChange?: (total: number, showing?: number) => void;
 }
 
-const WalkInList: React.FC<WalkInListProps> = ({ onEdit, onView }) => {
+const WalkInList: React.FC<WalkInListProps> = ({ onEdit, onView, onCountChange }) => {
   const [data, setData] = useState<WalkInData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [pageSize, setPageSize] = useState<number>(20);
-  const [currentPage, setCurrentPage] = useState<number>(1);
+  // Infinite scroll controls
+  const [visibleCount, setVisibleCount] = useState<number>(30);
+  const LOAD_STEP = 20;
   const [aiVisible, setAiVisible] = useState(false);
   const [aiSummary, setAiSummary] = useState<{ ai1?: string; ai2?: string; ai3?: string; ai4?: string }>({});
 
@@ -65,6 +67,7 @@ const WalkInList: React.FC<WalkInListProps> = ({ onEdit, onView }) => {
         // Sort latest first by running number (desc)
         const sorted = [...raw].sort((a, b) => getNo(b) - getNo(a));
         setData(sorted);
+        if (onCountChange) onCountChange(sorted.length, Math.min(visibleCount, sorted.length));
       } catch (err) {
         setError('Failed to fetch data');
       }
@@ -73,6 +76,23 @@ const WalkInList: React.FC<WalkInListProps> = ({ onEdit, onView }) => {
 
     fetchData();
   }, []);
+
+  // Set up window-based infinite scroll
+  useEffect(() => {
+    const onScroll = () => {
+      const nearBottom = window.innerHeight + window.scrollY >= document.body.offsetHeight - 200;
+      if (nearBottom) {
+        setVisibleCount((prev) => Math.min(prev + LOAD_STEP, data.length));
+      }
+    };
+    window.addEventListener('scroll', onScroll);
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [data.length]);
+
+  // Notify parent when visible count or data changes
+  useEffect(() => {
+    if (onCountChange) onCountChange(data.length, Math.min(visibleCount, data.length));
+  }, [data.length, visibleCount, onCountChange]);
 
   if (loading) {
     return (
@@ -103,9 +123,11 @@ const WalkInList: React.FC<WalkInListProps> = ({ onEdit, onView }) => {
   };
 
   // Mobile Card View
+  const visibleData = data.slice(0, Math.min(visibleCount, data.length));
+
   const MobileCardView = () => (
     <div>
-      {data.map((record, index) => (
+      {visibleData.map((record, index) => (
         <Card 
           key={record['No.'] || index} 
           style={{ marginBottom: '16px' }}
@@ -302,23 +324,11 @@ const WalkInList: React.FC<WalkInListProps> = ({ onEdit, onView }) => {
 
     return (
       <Table
-        dataSource={data}
+        dataSource={visibleData}
         columns={columns}
         rowKey={record => record['No.'] || (record as any)['No'] || Math.random().toString()}
-        scroll={{ y: 600 }}
         size="middle"
-        pagination={{
-          current: currentPage,
-          pageSize,
-          showSizeChanger: true,
-          pageSizeOptions: ['10', '20', '50', '100'],
-          showQuickJumper: true,
-          showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} items`,
-          onChange: (page, size) => {
-            setCurrentPage(page);
-            if (size && size !== pageSize) setPageSize(size);
-          },
-        }}
+        pagination={false}
         className="responsive-table"
       />
     );
@@ -410,23 +420,11 @@ const WalkInList: React.FC<WalkInListProps> = ({ onEdit, onView }) => {
 
     return (
       <Table
-        dataSource={data}
+        dataSource={visibleData}
         columns={columns}
         rowKey={record => record['No.'] || (record as any)['No'] || Math.random().toString()}
-        scroll={{ y: 500 }}
         size="small"
-        pagination={{
-          current: currentPage,
-          pageSize,
-          showSizeChanger: true,
-          pageSizeOptions: ['10', '20', '50', '100'],
-          showQuickJumper: true,
-          showTotal: (total, range) => `${range[0]}-${range[1]} of ${total}`,
-          onChange: (page, size) => {
-            setCurrentPage(page);
-            if (size && size !== pageSize) setPageSize(size);
-          },
-        }}
+        pagination={false}
       />
     );
   };
@@ -442,8 +440,7 @@ const WalkInList: React.FC<WalkInListProps> = ({ onEdit, onView }) => {
   return (
     <Card 
       title={
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span>Walk-in Records ({data.length} entries)</span>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
           <div style={{ fontSize: '12px', color: '#666', fontWeight: 'normal' }}>
             {window.innerWidth < 576 ? '📱 Mobile View' : 
              window.innerWidth < 992 ? '💻 Tablet View' : 
@@ -453,7 +450,19 @@ const WalkInList: React.FC<WalkInListProps> = ({ onEdit, onView }) => {
       }
       className="form-card"
     >
+      {/* Count indicator for infinite scroll */}
+      <div style={{ textAlign: 'right', color: '#888', fontSize: 12, marginBottom: 8 }}>
+        Showing {Math.min(visibleCount, data.length)} of {data.length} items
+      </div>
+
       {getResponsiveView()}
+
+      {/* Bottom indicator when more can load */}
+      {visibleCount < data.length && (
+        <div style={{ textAlign: 'center', padding: '12px', color: '#888' }}>
+          Loading more on scroll...
+        </div>
+      )}
 
       <Modal
         title="ผลการสรุปจาก AI"

@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Form, Button, Steps, Divider, Modal, Descriptions } from 'antd';
 import { useSelector, useDispatch } from 'react-redux';
 import axios from 'axios';
-import { API_BASE } from '../../../config';
+import { API_BASE, SHOW_FORM_ACTIONS } from '../../../config';
 import { RootState, AppDispatch } from '../../../store';
 import { setCurrentStep, updateFormData, clearForm } from '../../../store/slices/walkInFormSlice';
 import { convertFormDatesForAPI, safeParseDate } from '../../../utils/dateUtils';
@@ -262,6 +262,15 @@ const WalkInForm: React.FC<WalkInFormProps> = ({ onSubmitted, onHome }) => {
     handleSubmit(true);
   };
 
+  // Compose header title with record number and customer name when editing/viewing
+  const makeHeaderTitle = () => {
+    const id = editingRecordId || (formData?.no ? String(formData.no) : '');
+    const name = (form.getFieldValue('fullName') || formData?.fullName || '').toString().trim();
+    if (isEditMode) return `🔧 Edit #${id}${name ? ' — ' + name : ''}`;
+    if (isViewMode) return `👁️ View #${id}${name ? ' — ' + name : ''}`;
+    return '📝 New Walk-in Form';
+  };
+
   return (
     <div className="single-page-form">
       {/* Sticky Header */}
@@ -282,25 +291,14 @@ const WalkInForm: React.FC<WalkInFormProps> = ({ onSubmitted, onHome }) => {
         }}>
           <div>
             <div style={{ color: isEditMode ? '#ff7a00' : isViewMode ? '#52c41a' : '#1890ff', fontWeight: 'bold', fontSize: '20px' }}>
-              {isEditMode ? `🔧 Edit Record #${editingRecordId}` : 
-               isViewMode ? `👁️ View Record #${editingRecordId}` : 
-               '📝 New Walk-in Form'}
+              {makeHeaderTitle()}
             </div>
             <div style={{ fontSize: '14px', color: '#666', marginTop: '4px' }}>
               {steps[currentStep].description}
             </div>
           </div>
           <div style={{ display: 'flex', gap: '12px' }}>
-            {(isEditMode || isViewMode) && (
-              <Button 
-                onClick={() => {
-                  dispatch(clearForm());
-                  form.resetFields();
-                }}
-              >
-                {isViewMode ? '← Back to List' : '✕ Cancel Edit'}
-              </Button>
-            )}
+            {/* Keep AI summary button visible in edit mode regardless of flag */}
             {isEditMode && (
               <Button 
                 onClick={() => setAiVisible(true)}
@@ -309,22 +307,38 @@ const WalkInForm: React.FC<WalkInFormProps> = ({ onSubmitted, onHome }) => {
                 ผลการสรุปจาก AI
               </Button>
             )}
-            {!isViewMode && (
-              <Button 
-                onClick={handleSaveDraft}
-                icon="💾"
-              >
-                Save Draft
-              </Button>
-            )}
-            {!isViewMode && (
-              <Button 
-                type="primary" 
-                onClick={() => handleSubmit(false)}
-                icon="✓"
-              >
-                {isEditMode ? 'Update Record' : 'Submit Form'}
-              </Button>
+
+            {/* Other actions can be toggled via flag */}
+            {SHOW_FORM_ACTIONS && (
+              <>
+                {(isEditMode || isViewMode) && (
+                  <Button 
+                    onClick={() => {
+                      dispatch(clearForm());
+                      form.resetFields();
+                    }}
+                  >
+                    {isViewMode ? '← Back to List' : '✕ Cancel Edit'}
+                  </Button>
+                )}
+                {!isViewMode && (
+                  <Button 
+                    onClick={handleSaveDraft}
+                    icon="💾"
+                  >
+                    Save Draft
+                  </Button>
+                )}
+                {!isViewMode && (
+                  <Button 
+                    type="primary" 
+                    onClick={() => handleSubmit(false)}
+                    icon="✓"
+                  >
+                    {isEditMode ? 'Update Record' : 'Submit Form'}
+                  </Button>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -405,42 +419,42 @@ const WalkInForm: React.FC<WalkInFormProps> = ({ onSubmitted, onHome }) => {
         </Form>
       </div>
 
-      {/* Floating Navigation (Optional) */}
+      {/* Floating Footer Controls */}
       <div className="floating-nav" style={{
         position: 'fixed',
-        bottom: '24px',
-        right: '24px',
+        bottom: 16,
+        left: '50%',
+        transform: 'translateX(-50%)',
         display: 'flex',
-        flexDirection: 'column',
-        gap: '8px',
+        alignItems: 'center',
+        gap: 12,
+        padding: '8px 12px',
+        background: '#7fd2c7',
+        border: 'none',
+        borderRadius: 999,
+        boxShadow: '0 6px 24px rgba(0,0,0,0.12)',
         zIndex: 999
       }}>
-        <Button 
-          shape="round"
-          onClick={() => {
-            if (typeof onHome === 'function') onHome();
-          }}
-          style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}
-        >
-          ⌂ Home
-        </Button>
-        {activeSection > 0 && (
+        {/* Cancel */}
+        {(isEditMode || isViewMode) && (
           <Button 
-            shape="round" 
-            onClick={prev}
-            style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}
+            onClick={() => {
+              dispatch(clearForm());
+              form.resetFields();
+              if (typeof onHome === 'function') onHome();
+            }}
           >
-            ↑ Previous
+            ✕ Cancel
           </Button>
         )}
-        {activeSection < steps.length - 1 && (
+
+        {/* Save (Update/Submit) - only when editing and not in view-only mode */}
+        {isEditMode && !isViewMode && (
           <Button 
-            type="primary" 
-            shape="round" 
-            onClick={next}
-            style={{ boxShadow: '0 4px 12px rgba(24, 144, 255, 0.3)' }}
+            type="primary"
+            onClick={() => handleSubmit(false)}
           >
-            Next ↓
+            Save
           </Button>
         )}
       </div>

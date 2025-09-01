@@ -17,6 +17,8 @@ const App: React.FC = () => {
   // Default landing view switched to list as requested
   const [view, setView] = useState('list');
   const dispatch = useDispatch<AppDispatch>();
+  const [entriesTotal, setEntriesTotal] = useState<number>(0);
+  const [entriesShowing, setEntriesShowing] = useState<number>(0);
 
   // Helper to pick AI fields like AI1-AI4 robustly (tolerate spaces/case)
   const pickAI = (obj: any, target: string) => {
@@ -46,7 +48,7 @@ const App: React.FC = () => {
             <div className="header-left">
               <img src={senaLogo} alt="SENA Logo" className="sena-logo" />
               <Title level={2} className="app-title">
-                {view === 'form' ? 'Walk-in Form 2025' : 'Walk-in Records'}
+                {view === 'form' ? 'Walk-in Form 2025' : `Walk-in Records ${entriesTotal ? `(${entriesTotal} entries)` : ''}`}
               </Title>
             </div>
             <div style={{ display: 'flex', gap: 12 }}>
@@ -76,6 +78,10 @@ const App: React.FC = () => {
             <WalkInForm onSubmitted={() => setView('list')} onHome={() => setView('list')} />
           ) : (
             <WalkInList 
+              onCountChange={(total, showing) => {
+                if (typeof total === 'number') setEntriesTotal(total);
+                if (typeof showing === 'number') setEntriesShowing(showing);
+              }}
               onEdit={(record) => {
                 try {
                   console.log('Edit clicked for record:', record);
