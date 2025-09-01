@@ -78,6 +78,33 @@
   padding: 24px;
 }
 
+/* Compact table spacing for list view */
+.compact-table .ant-table-thead > tr > th,
+.compact-table .ant-table-tbody > tr > td {
+  padding: 8px 12px;
+}
+
+.compact-table .ant-table {
+  font-size: 13px;
+}
+
+.compact-table .ant-tag {
+  line-height: 18px;
+  height: 22px;
+}
+
+/* AI Modal: ensure not overlapped by sticky header, keep centered under header */
+.ai-modal .ant-modal {
+  top: 140px !important;
+}
+
+@media (max-width: 768px) {
+  .ai-modal .ant-modal {
+    top: 120px !important;
+    width: 95vw !important;
+  }
+}
+
 /* Steps Styles */
 .steps-content {
   margin-top: 32px;

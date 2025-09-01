@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ConfigProvider, Button, Typography } from 'antd';
+import { ConfigProvider, Button, Typography, Input } from 'antd';
 import { useDispatch } from 'react-redux';
 import WalkInForm from './components/forms/WalkInForm/WalkInForm';
 import WalkInList from './components/list/WalkInList';
@@ -19,6 +19,7 @@ const App: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const [entriesTotal, setEntriesTotal] = useState<number>(0);
   const [entriesShowing, setEntriesShowing] = useState<number>(0);
+  const [query, setQuery] = useState<string>('');
 
   // Helper to pick AI fields like AI1-AI4 robustly (tolerate spaces/case)
   const pickAI = (obj: any, target: string) => {
@@ -51,7 +52,18 @@ const App: React.FC = () => {
                 {view === 'form' ? 'Walk-in Form 2025' : `Walk-in Records ${entriesTotal ? `(${entriesTotal} entries)` : ''}`}
               </Title>
             </div>
-            <div style={{ display: 'flex', gap: 12 }}>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+              {/* Super Search */}
+              {view !== 'form' && (
+                <Input
+                  allowClear
+                  size="large"
+                  placeholder="ใส่ชื่อ หรือ หมายเลขโทรศัพท์เพื่อค้นหา"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  style={{ width: 320 }}
+                />
+              )}
               <Button 
                 type={view === 'list' ? 'primary' : 'default'} 
                 size="large" 
@@ -78,6 +90,7 @@ const App: React.FC = () => {
             <WalkInForm onSubmitted={() => setView('list')} onHome={() => setView('list')} />
           ) : (
             <WalkInList 
+              query={query}
               onCountChange={(total, showing) => {
                 if (typeof total === 'number') setEntriesTotal(total);
                 if (typeof showing === 'number') setEntriesShowing(showing);

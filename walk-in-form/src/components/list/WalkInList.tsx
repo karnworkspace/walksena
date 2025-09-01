@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Table, Spin, Alert, Card, Tag, Typography, Row, Col, Button, Modal, Descriptions } from 'antd';
 import { UserOutlined, PhoneOutlined, MailOutlined, EditOutlined } from '@ant-design/icons';
+import senaLogo from '../../assets/sena logo.png';
 import axios from 'axios';
 import { API_BASE } from '../../config';
 
@@ -25,9 +26,10 @@ interface WalkInListProps {
   onEdit?: (record: WalkInData) => void;
   onView?: (record: WalkInData) => void;
   onCountChange?: (total: number, showing?: number) => void;
+  query?: string;
 }
 
-const WalkInList: React.FC<WalkInListProps> = ({ onEdit, onView, onCountChange }) => {
+const WalkInList: React.FC<WalkInListProps> = ({ onEdit, onView, onCountChange, query }) => {
   const [data, setData] = useState<WalkInData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -82,17 +84,33 @@ const WalkInList: React.FC<WalkInListProps> = ({ onEdit, onView, onCountChange }
     const onScroll = () => {
       const nearBottom = window.innerHeight + window.scrollY >= document.body.offsetHeight - 200;
       if (nearBottom) {
-        setVisibleCount((prev) => Math.min(prev + LOAD_STEP, data.length));
+        setVisibleCount((prev) => prev + LOAD_STEP);
       }
     };
     window.addEventListener('scroll', onScroll);
     return () => window.removeEventListener('scroll', onScroll);
   }, [data.length]);
 
-  // Notify parent when visible count or data changes
+  // Filter by name or phone according to query
+  const normalizePhone = (s: string) => s.replace(/[^0-9]/g, '');
+  const filtered = React.useMemo(() => {
+    if (!query || query.trim() === '') return data;
+    const q = query.trim().toLowerCase();
+    const qDigits = normalizePhone(q);
+    return data.filter((r) => {
+      const name = String(r['ชื่อ นามสกุล'] || '').toLowerCase();
+      const phone = normalizePhone(String(r['หมายเลขโทรศัพท์'] || ''));
+      return (name.includes(q)) || (qDigits && phone.includes(qDigits));
+    });
+  }, [data, query]);
+
+  // Reset visible count when query changes
+  useEffect(() => { setVisibleCount(30); }, [query]);
+
+  // Notify parent when visible count or filter changes
   useEffect(() => {
-    if (onCountChange) onCountChange(data.length, Math.min(visibleCount, data.length));
-  }, [data.length, visibleCount, onCountChange]);
+    if (onCountChange) onCountChange(filtered.length, Math.min(visibleCount, filtered.length));
+  }, [filtered.length, visibleCount, onCountChange]);
 
   if (loading) {
     return (
@@ -122,8 +140,8 @@ const WalkInList: React.FC<WalkInListProps> = ({ onEdit, onView, onCountChange }
     return 'default';
   };
 
-  // Mobile Card View
-  const visibleData = data.slice(0, Math.min(visibleCount, data.length));
+  // Mobile Card View data source
+  const visibleData = filtered.slice(0, Math.min(visibleCount, filtered.length));
 
   const MobileCardView = () => (
     <div>
@@ -219,7 +237,7 @@ const WalkInList: React.FC<WalkInListProps> = ({ onEdit, onView, onCountChange }
         key: 'no',
         width: '60px',
         render: (no: string) => (
-          <Text strong style={{ color: '#1890ff' }}>#{no}</Text>
+          <Text strong style={{ color: '#1890ff', fontSize: 13 }}>#{no}</Text>
         ),
       },
       {
@@ -227,17 +245,17 @@ const WalkInList: React.FC<WalkInListProps> = ({ onEdit, onView, onCountChange }
         key: 'customerInfo',
         render: (_: any, record: WalkInData) => (
           <div>
-            <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>
-              <UserOutlined style={{ marginRight: '6px', color: '#1890ff' }} />
+            <div style={{ fontWeight: 600, marginBottom: 2, lineHeight: 1.2 }}>
+              <UserOutlined style={{ marginRight: 6, color: '#1890ff' }} />
               {record['ชื่อ นามสกุล'] || 'N/A'}
             </div>
-            <div style={{ fontSize: '12px', color: '#666' }}>
-              <PhoneOutlined style={{ marginRight: '6px' }} />
+            <div style={{ fontSize: 12, color: '#666', lineHeight: 1.2 }}>
+              <PhoneOutlined style={{ marginRight: 6 }} />
               {record['หมายเลขโทรศัพท์'] || 'N/A'}
             </div>
             {record['Email'] && (
-              <div style={{ fontSize: '12px', color: '#666' }}>
-                <MailOutlined style={{ marginRight: '6px' }} />
+              <div style={{ fontSize: 11, color: '#888', lineHeight: 1.2 }}>
+                <MailOutlined style={{ marginRight: 6 }} />
                 {record['Email']}
               </div>
             )}
@@ -250,7 +268,7 @@ const WalkInList: React.FC<WalkInListProps> = ({ onEdit, onView, onCountChange }
         key: 'visitDate',
         width: '110px',
         render: (date: string) => (
-          <Text style={{ fontSize: '13px' }}>{date || 'N/A'}</Text>
+          <Text style={{ fontSize: 12 }}>{date || 'N/A'}</Text>
         ),
       },
       {
@@ -258,29 +276,7 @@ const WalkInList: React.FC<WalkInListProps> = ({ onEdit, onView, onCountChange }
         dataIndex: 'รูปแบบห้องที่ต้องการ ',
         key: 'roomType',
         render: (roomType: string) => (
-          <Text style={{ fontSize: '13px' }}>{roomType || 'N/A'}</Text>
-        ),
-      },
-      {
-        title: 'AI',
-        key: 'ai',
-        width: '70px',
-        render: (_: any, record: WalkInData) => (
-          <Button
-            type="primary"
-            shape="round"
-            size="small"
-            onClick={() => {
-              const ai1 = pickAI(record, 'AI1');
-              const ai2 = pickAI(record, 'AI2');
-              const ai3 = pickAI(record, 'AI3');
-              const ai4 = pickAI(record, 'AI4');
-              setAiSummary({ ai1, ai2, ai3, ai4 });
-              setAiVisible(true);
-            }}
-          >
-            AI
-          </Button>
+          <Text style={{ fontSize: 12 }}>{roomType || 'N/A'}</Text>
         ),
       },
       {
@@ -288,7 +284,7 @@ const WalkInList: React.FC<WalkInListProps> = ({ onEdit, onView, onCountChange }
         key: 'statusInfo', 
         render: (_: any, record: WalkInData) => (
           <div>
-            <div style={{ marginBottom: '4px' }}>
+            <div style={{ marginBottom: 2 }}>
               <Tag color={getGradeColor(record['Grade'] || '')}>
                 {record['Grade'] || 'N/A'}
               </Tag>
@@ -296,7 +292,7 @@ const WalkInList: React.FC<WalkInListProps> = ({ onEdit, onView, onCountChange }
             <div>
               <Tag 
                 color={getStatusColor(record['Status ล่าสุด ( เหตุผลที่ยังไม่ติดสินใจ )'] || '')}
-                style={{ fontSize: '11px' }}
+                style={{ fontSize: 10 }}
               >
                 {record['Status ล่าสุด ( เหตุผลที่ยังไม่ติดสินใจ )'] || 'N/A'}
               </Tag>
@@ -307,17 +303,47 @@ const WalkInList: React.FC<WalkInListProps> = ({ onEdit, onView, onCountChange }
       {
         title: 'Actions',
         key: 'actions',
-        width: '100px',
+        width: '180px',
         render: (_: any, record: WalkInData) => (
-          <Button 
-            type="primary" 
-            icon={<EditOutlined />} 
-            size="middle"
-            onClick={() => onEdit?.(record)}
-            block
-          >
-            Edit
-          </Button>
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+            <Button
+              aria-label="AI"
+              shape="round"
+              size="large"
+              style={{
+                background: '#13c2c2',
+                borderColor: '#13c2c2',
+                color: '#ffffff',
+                fontWeight: 700,
+                letterSpacing: 0.5,
+                height: 44,
+                width: 88,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+              }}
+              onClick={() => {
+                const ai1 = pickAI(record, 'AI1');
+                const ai2 = pickAI(record, 'AI2');
+                const ai3 = pickAI(record, 'AI3');
+                const ai4 = pickAI(record, 'AI4');
+                setAiSummary({ ai1, ai2, ai3, ai4 });
+                setAiVisible(true);
+              }}
+            >
+              AI
+            </Button>
+            <Button 
+              type="primary" 
+              icon={<EditOutlined />} 
+              size="large"
+              style={{ height: 44, padding: '0 18px', borderRadius: 24 }}
+              onClick={() => onEdit?.(record)}
+            >
+              Edit
+            </Button>
+          </div>
         ),
       },
     ];
@@ -329,7 +355,7 @@ const WalkInList: React.FC<WalkInListProps> = ({ onEdit, onView, onCountChange }
         rowKey={record => record['No.'] || (record as any)['No'] || Math.random().toString()}
         size="middle"
         pagination={false}
-        className="responsive-table"
+        className="responsive-table compact-table"
       />
     );
   };
@@ -379,41 +405,37 @@ const WalkInList: React.FC<WalkInListProps> = ({ onEdit, onView, onCountChange }
         ),
       },
       {
-        title: 'AI',
-        key: 'ai',
-        width: '60px',
-        render: (_: any, record: WalkInData) => (
-          <Button
-            type="primary"
-            shape="round"
-            size="small"
-            onClick={() => {
-              const ai1 = pickAI(record, 'AI1');
-              const ai2 = pickAI(record, 'AI2');
-              const ai3 = pickAI(record, 'AI3');
-              const ai4 = pickAI(record, 'AI4');
-              setAiSummary({ ai1, ai2, ai3, ai4 });
-              setAiVisible(true);
-            }}
-          >
-            AI
-          </Button>
-        ),
-      },
-      {
         title: 'Actions',
         key: 'actions',
-        width: '80px',
+        width: '160px',
         render: (_: any, record: WalkInData) => (
-          <Button 
-            type="primary" 
-            icon={<EditOutlined />} 
-            size="small"
-            block
-            onClick={() => onEdit?.(record)}
-          >
-            Edit
-          </Button>
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+            <Button
+              aria-label="AI"
+              shape="round"
+              size="middle"
+              style={{ background: '#13c2c2', borderColor: '#13c2c2', color: '#fff', fontWeight: 700, letterSpacing: 0.5, height: 40, width: 76, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              onClick={() => {
+                const ai1 = pickAI(record, 'AI1');
+                const ai2 = pickAI(record, 'AI2');
+                const ai3 = pickAI(record, 'AI3');
+                const ai4 = pickAI(record, 'AI4');
+                setAiSummary({ ai1, ai2, ai3, ai4 });
+                setAiVisible(true);
+              }}
+            >
+              AI
+            </Button>
+            <Button 
+              type="primary" 
+              icon={<EditOutlined />} 
+              size="middle"
+              style={{ height: 40, padding: '0 16px', borderRadius: 22 }}
+              onClick={() => onEdit?.(record)}
+            >
+              Edit
+            </Button>
+          </div>
         ),
       },
     ];
@@ -425,6 +447,7 @@ const WalkInList: React.FC<WalkInListProps> = ({ onEdit, onView, onCountChange }
         rowKey={record => record['No.'] || (record as any)['No'] || Math.random().toString()}
         size="small"
         pagination={false}
+        className="compact-table"
       />
     );
   };
@@ -452,13 +475,13 @@ const WalkInList: React.FC<WalkInListProps> = ({ onEdit, onView, onCountChange }
     >
       {/* Count indicator for infinite scroll */}
       <div style={{ textAlign: 'right', color: '#888', fontSize: 12, marginBottom: 8 }}>
-        Showing {Math.min(visibleCount, data.length)} of {data.length} items
+        Showing {Math.min(visibleCount, filtered.length)} of {filtered.length} items
       </div>
 
       {getResponsiveView()}
 
       {/* Bottom indicator when more can load */}
-      {visibleCount < data.length && (
+      {visibleCount < filtered.length && (
         <div style={{ textAlign: 'center', padding: '12px', color: '#888' }}>
           Loading more on scroll...
         </div>
@@ -468,11 +491,18 @@ const WalkInList: React.FC<WalkInListProps> = ({ onEdit, onView, onCountChange }
         title="ผลการสรุปจาก AI"
         open={aiVisible}
         onCancel={() => setAiVisible(false)}
+        centered={false}
+        width="90vw"
+        style={{ top: 140 }}
+        zIndex={5000}
+        wrapClassName="ai-modal"
+        bodyStyle={{ maxHeight: '70vh', overflow: 'auto', padding: 16 }}
+        maskStyle={{ backdropFilter: 'blur(2px)' }}
         footer={[
           <Button key="close" type="primary" onClick={() => setAiVisible(false)}>ปิด</Button>
         ]}
       >
-        <Descriptions column={1} size="small" bordered>
+        <Descriptions column={1} size="middle" bordered>
           <Descriptions.Item label="สถานะ">{aiSummary.ai1 || '—'}</Descriptions.Item>
           <Descriptions.Item label="วัตถุประสงค์">{aiSummary.ai2 || '—'}</Descriptions.Item>
           <Descriptions.Item label="สาเหตุ">{aiSummary.ai3 || '—'}</Descriptions.Item>

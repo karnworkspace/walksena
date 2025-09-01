@@ -433,7 +433,7 @@ const WalkInForm: React.FC<WalkInFormProps> = ({ onSubmitted, onHome }) => {
         border: 'none',
         borderRadius: 999,
         boxShadow: '0 6px 24px rgba(0,0,0,0.12)',
-        zIndex: 999
+        zIndex: 4000
       }}>
         {/* Cancel */}
         {(isEditMode || isViewMode) && (
@@ -445,6 +445,16 @@ const WalkInForm: React.FC<WalkInFormProps> = ({ onSubmitted, onHome }) => {
             }}
           >
             ✕ Cancel
+          </Button>
+        )}
+
+        {/* AI Summary (between Cancel and Save) */}
+        {(isEditMode || isViewMode) && (
+          <Button
+            onClick={() => setAiVisible(true)}
+            style={{ background: '#ffffff', borderColor: '#ffffff' }}
+          >
+            AI
           </Button>
         )}
 
