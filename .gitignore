@@ -38,6 +38,8 @@ lerna-debug.log*
 .stylelintcache
 .cache
 .parcel-cache
+*/.cache/
+*/node_modules/
 
 # macOS
 .DS_Store
