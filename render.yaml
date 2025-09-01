@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: walksena-api
+    env: node
+    plan: free
+    buildCommand: cd server && npm install && npm run build
+    startCommand: cd server && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        fromService:
+          type: web
+          name: walksena-api
+          property: port
+      - key: SERVE_FRONTEND
+        value: "false"
+      - key: SPREADSHEET_ID
+        sync: false
+      - key: GOOGLE_SERVICE_ACCOUNT_KEY
+        sync: false
+    healthCheckPath: /api/health
+    disk:
+      name: walksena-disk
+      mountPath: /tmp
+      sizeGB: 1

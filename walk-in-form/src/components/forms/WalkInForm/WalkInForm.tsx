@@ -474,6 +474,13 @@ const WalkInForm: React.FC<WalkInFormProps> = ({ onSubmitted, onHome }) => {
         title="ผลการสรุปจาก AI"
         open={aiVisible}
         onCancel={() => setAiVisible(false)}
+        centered={false}
+        width="90vw"
+        style={{ top: 140 }}
+        zIndex={5000}
+        wrapClassName="ai-modal"
+        bodyStyle={{ maxHeight: '70vh', overflow: 'auto', padding: 16 }}
+        maskStyle={{ backdropFilter: 'blur(2px)' }}
         footer={[
           <Button key="close" type="primary" onClick={() => setAiVisible(false)}>ปิด</Button>
         ]}
@@ -487,7 +494,7 @@ const WalkInForm: React.FC<WalkInFormProps> = ({ onSubmitted, onHome }) => {
             const aiCause = values.aiCause || '—';
             const aiDetail = values.aiDetail || values.customerDetails || '—';
             return (
-              <Descriptions column={1} size="small" bordered>
+              <Descriptions column={1} size="middle" bordered>
                 <Descriptions.Item label="สถานะ">{aiStatus}</Descriptions.Item>
                 <Descriptions.Item label="วัตถุประสงค์">{aiObjective}</Descriptions.Item>
                 <Descriptions.Item label="สาเหตุ">{aiCause}</Descriptions.Item>
