@@ -3,6 +3,7 @@ import { ConfigProvider, Button, Typography } from 'antd';
 import { useDispatch } from 'react-redux';
 import WalkInForm from './components/forms/WalkInForm/WalkInForm';
 import WalkInList from './components/list/WalkInList';
+import { SHOW_CREATE_BUTTON } from './config';
 import { setEditMode, setViewMode, clearForm } from './store/slices/walkInFormSlice';
 import { convertGoogleSheetsToFormData } from './utils/dataConverter';
 import { AppDispatch } from './store';
@@ -56,17 +57,19 @@ const App: React.FC = () => {
               >
                 📋 View List
               </Button>
-              <Button 
-                type={view === 'form' ? 'primary' : 'default'} 
-                size="large" 
-                onClick={() => {
-                  // clear any edit/view state and start a fresh form
-                  dispatch(clearForm());
-                  setView('form');
-                }}
-              >
-                📝 Create New Customer
-              </Button>
+              {SHOW_CREATE_BUTTON && (
+                <Button 
+                  type={view === 'form' ? 'primary' : 'default'} 
+                  size="large" 
+                  onClick={() => {
+                    // clear any edit/view state and start a fresh form
+                    dispatch(clearForm());
+                    setView('form');
+                  }}
+                >
+                  📝 Create New Customer
+                </Button>
+              )}
             </div>
           </div>
           {view === 'form' ? (
