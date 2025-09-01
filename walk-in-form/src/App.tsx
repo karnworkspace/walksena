@@ -13,7 +13,8 @@ import './App.css';
 const { Title } = Typography;
 
 const App: React.FC = () => {
-  const [view, setView] = useState('form');
+  // Default landing view switched to list as requested
+  const [view, setView] = useState('list');
   const dispatch = useDispatch<AppDispatch>();
 
   // Helper to pick AI fields like AI1-AI4 robustly (tolerate spaces/case)
